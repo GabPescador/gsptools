@@ -1,4 +1,4 @@
-# gsp_tools
+# gsptools
 R package for personal and general use custom functions.
 
 # Installation
