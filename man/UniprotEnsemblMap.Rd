@@ -20,7 +20,7 @@ Generated with biomaRt.
 UniprotEnsemblMap
 }
 \description{
-Dataframe with mapped uniprot protien IDs to Ensemble gene IDs. This was generated with biomaRt on
+Dataframe with mapped uniprot protein IDs to Ensemble gene IDs. This was generated with biomaRt on
 2024/11/20.
 }
 \keyword{datasets}
