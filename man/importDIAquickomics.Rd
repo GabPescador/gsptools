@@ -4,12 +4,14 @@
 \alias{importDIAquickomics}
 \title{Import DIA tables from ProteoVista quickomics input files}
 \usage{
-importDIAquickomics(inputPath, outputPath)
+importDIAquickomics(inputPath, outputPath, organism = "zf")
 }
 \arguments{
 \item{inputPath}{Path where quickomics files are and should include msqrob_dea_results.csv, quickomics_expression_data.csv, quickomics_gene_protein_table.csv and quickomics_sample_metadata.csv}
 
 \item{outputPath}{Path to where you want to save the output tables}
+
+\item{organism}{Organism that the data is from to fix capitalization of protien names. Zebrafish = zf, and protiens should start with upper letter but everything else is lower case.}
 }
 \value{
 Assigns the new dataframes as "dea" and "abundance" in the global environment, while also saving the tables as .csv in the outputPath.
