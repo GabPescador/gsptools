@@ -25,14 +25,20 @@ importDIAquickomics <- function(inputPath, outputPath){
   # DEA
   dea <- merge(dea, geneNames[,c("UniqueID", "gene_symbols", "Gene.Name")],
                by = "UniqueID") %>%
-    relocate(c(gene_symbols, Gene.Name), .after = UniqueID)
+    relocate(c(gene_symbols, Gene.Name), .after = UniqueID) %>%
+    rename("adj.P.Val" = "Adj.P.Value",
+           "ProteinID" = "UniqueID",
+           "ProteinName" = "Gene.Name",
+           "contrast" = "test")
   assign("dea", dea, envir = .GlobalEnv) # assign the df as a new object
   write_csv(dea, paste0(outputPath, "msqrob_dea_with_names.csv"))
   
   # Abundance
   abundance <- merge(abundance, geneNames[,c("UniqueID", "gene_symbols", "Gene.Name")],
                      by = "UniqueID") %>%
-    relocate(c(gene_symbols, Gene.Name), .after = UniqueID)
+    relocate(c(gene_symbols, Gene.Name), .after = UniqueID) %>%
+    rename("ProteinID" = "UniqueID",
+           "ProteinName" = "Gene.Name")
   names(abundance) <- metadata$uniqueSample[match(names(abundance), metadata$sampleid)] # this renames columns to simpler uniqueIDs from the metadata file
   assign("abundance", abundance, envir = .GlobalEnv)
   write_csv(abundance, paste0(outputPath, "abundance_with_names.csv"))
