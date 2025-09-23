@@ -7,6 +7,7 @@
 #' @importFrom dplyr filter
 #' @importFrom stats lm
 #' @importFrom stats fisher.test
+#' @importFrom stats model.matrix
 #' @importFrom plotrix std.error
 #' @importFrom readr read_csv
 #' @importFrom readr write_csv
@@ -20,5 +21,7 @@
 #' @importFrom dplyr select
 #' @importFrom reshape2 dcast
 #' @importFrom forcats fct_relevel
-#' 
+#' @importFrom cowplot plot_grid
+#' @importFrom grDevices dev.off pdf
+#'
 NULL

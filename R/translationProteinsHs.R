@@ -1,6 +1,6 @@
-#' Translation related protein IDs from UNIPROT
+#' Translation related protein IDs from UNIPROT for humans
 #'
-#' Dataframe with translation related IDs downloaded from uniprot and GO term GO:00064 on 2025/09/15.
+#' Dataframe with translation related IDs downloaded from uniprot and GO term GO:00064 on 2025/09/23.
 #'
 #' @format A data frame with 534 rows and 9 columns:
 #' \describe{
@@ -11,8 +11,9 @@
 #'   \item{Gene Names}{Short protein names assosicated with ID, might have multiple}
 #'   \item{Organism}{Which organism it is from}
 #'   \item{Length}{Aminoacid length of protein}
-#'   \item{Name}{Gene names taken from the first name of Gene Names column, should be unique}
+#'   \item{ProteinName}{Gene names taken from the first name of Gene Names column, should be unique}
+#'   \item{Ensembl}{Ensembl transcript ID mapped to the protein ID, might have multiple}
 #'   ...
 #' }
-#' @source Downloaded from Uniprot on 2025/09/15.
-"translationProteins"
+#' @source Downloaded from Uniprot on 2025/09/23.
+"translationProteinsHs"
