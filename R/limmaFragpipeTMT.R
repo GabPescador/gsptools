@@ -119,17 +119,30 @@ limmaFragpipeTMT <- function(inputPath, jobname, method = "quantile", outputPath
   # Taking out proteins that are not present in at least 2 replicates if replicateFilter == TRUE
   if (replicateFilter == TRUE){
 
-    norm_filtered <- norm %>%
+    norm_long <- norm %>%
       reshape2::melt(id.vars = colnames(.)[1:7]) %>%
-      select(protein_id, variable, value) %>%
-      merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
+      # select(protein_id, variable, value) %>%
+      merge(., metadata[,-3], by.x = "variable", by.y = "sample")
+
+    norm_filtered <- norm_long %>%
       filter(!is.na(value)) %>%
       group_by(protein_id, group) %>%
-      summarize(counts =n()) %>%
-      filter(counts >= 2)
+      summarize(counts =n())
 
-    norm <- norm %>%
-      filter(protein_id %in% norm_filtered$protein_id)
+    norm_long <- merge(norm_long, norm_filtered, by = c("protein_id", "group"))
+
+    norm_long <- norm_long %>%
+      mutate(value = if_else(counts < 2, NA_real_, value))
+      # group_by(protein_id, protein_name, group, protein, entry_id, entry_name, protein_description, indistinguishable_proteins) %>%
+      # summarize(mean = mean(value, na.rm=TRUE))
+
+    norm <- norm_long %>%
+      pivot_wider(
+        id_cols = c(protein_id, protein_name, protein, entry_id, entry_name, protein_description, indistinguishable_proteins),
+        names_from = variable,
+        values_from = c(value),
+        names_sep = "_"
+        )
 
   } else {
 
