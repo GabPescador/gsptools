@@ -4,7 +4,15 @@
 \alias{limmaFragpipeTMT}
 \title{Imports normalized TMT data from NormalyzerDE and performs limma contrasts.}
 \usage{
-limmaFragpipeTMT(inputPath, jobname, method = "quantile", outputPath)
+limmaFragpipeTMT(
+  inputPath,
+  jobname,
+  method = "quantile",
+  outputPath,
+  replicateFilter = TRUE,
+  groups = FALSE,
+  force = FALSE
+)
 }
 \arguments{
 \item{inputPath}{Input path where "metadata.csv", "contrast.csv" and "abundance_protein_MD.tsv" are located.}
@@ -12,6 +20,12 @@ limmaFragpipeTMT(inputPath, jobname, method = "quantile", outputPath)
 \item{jobname}{Specifies the folder name for NormalyzerDE, for convenience I always use the PROT-XXXX.}
 
 \item{method}{Specifies the chosen normalization method, defaults to "quantile". Options are: "cycloess", "gi", "log2", "mean", "median", "quantile", "rlr"}
+
+\item{replicateFilter}{Defaults to TRUE. Filters proteins that are not present in at least 2 replicates.}
+
+\item{groups}{Defaults to FALSE. If TRUE, will use the type column in metadata.csv to search unique proteins based on those groupings.}
+
+\item{force}{Defaults to FALSE. Forces saving the results table in case it already exists.}
 
 \item{outputpath}{Output path to save all the outputs.}
 }
