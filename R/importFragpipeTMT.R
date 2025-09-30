@@ -7,10 +7,11 @@
 #' @param inputPath Input path where "metadata.csv", "contrast.csv" and "abundance_protein_MD.tsv" are located.
 #' @param jobname Specifies the folder name for NormalyzerDE, for convenience I always use the PROT-XXXX.
 #' @param outputpath Output path to save all the outputs.
+#' @param force Default to FALSE. Forces normalyzer DE to run.
 #' @return Generates the NormalyzerDE report from fragpipe input.
 #' @export
 
-importFragpipeTMT <- function(inputPath, jobname, outputPath){
+importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
 
   # Check that tables are in the input folder
   if (file.exists(paste0(inputPath, "metadata.csv")) &
@@ -36,22 +37,25 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath){
   # Read input file and remove contaminants and rev proteins
       tmt <- fread(here(inputPath, "abundance_protein_MD.tsv")) %>%
              rename("ProteinID" = "Index",
-                    "ProteinName" = "Gene") %>%
+                    "ProteinName" = "Gene",
+                    "EntryID" = "Protein ID") %>%
         mutate(ProteinName = tolower(ProteinName)) %>%
         filter(!str_detect(ProteinID, "Cont")) %>%
-        filter(!str_detect(ProteinID, "rev"))
+        filter(!str_detect(ProteinID, "rev")) %>%
+        setNames(snakecase::to_snake_case(names(.)))
 
   # Normalization
   ## Creating the summarizedExperiment object
   ### Matrix table
       matrix <- tmt %>%
-        select(ProteinID, ReferenceIntensity:last_col(), -ReferenceIntensity) %>%
+        select(protein_id, reference_intensity:last_col(), -reference_intensity) %>%
         as.data.frame() %>%
-        column_to_rownames("ProteinID") %>%
+        column_to_rownames("protein_id") %>%
         as.matrix()
 
   ### Design table
-      design <- fread(here(inputPath, "metadata.csv"))
+      design <- fread(here(inputPath, "metadata.csv")) %>%
+        mutate(across(where(is.character), snakecase::to_snake_case))
 
   ### colData
       colData <- design
@@ -66,7 +70,39 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath){
                                  rowData = rowData)
 
   ### Normalization with NormalizerDE
-      if (dir.exists(here(outputPath, "output", "normalyzerDE", jobname))) { # simpler way to check directory already exists
+      if (force == TRUE) {
+
+        print("Running NormalizerDE...")
+
+        normalyzer(
+          jobName = jobname,
+          #designPath = NULL,
+          #dataPath = NULL,
+          experimentObj = se,
+          outputDir = here(outputPath, "output", "normalyzerDE"),
+          forceAllMethods = FALSE,
+          omitLowAbundSamples = FALSE,
+          #sampleAbundThres = 0,
+          #tinyRunThres = 50,
+          requireReplicates = TRUE,
+          #normalizeRetentionTime = TRUE,
+          #plotRows = 3,
+          #plotCols = 4,
+          zeroToNA = TRUE,
+          sampleColName = "sample",
+          groupColName = "group",
+          #inputFormat = "default",
+          skipAnalysis = FALSE,
+          quiet = FALSE,
+          noLogTransform = TRUE,
+          #writeReportAsPngs = FALSE,
+          #rtStepSizeMinutes = 1,
+          #rtWindowMinCount = 100,
+          #rtWindowShifts = 1,
+          #rtWindowMergeMethod = "mean"
+        )
+
+      } else if (dir.exists(here(outputPath, "output", "normalyzerDE", jobname))) { # simpler way to check directory already exists
 
         print(paste0("Normalization already performed and can be found in ",
                      here(outputPath, "output", "normalyzerDE", jobname)))

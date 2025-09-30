@@ -4,12 +4,14 @@
 \alias{importFragpipeTMT}
 \title{Imports TMT data from fragpipe and normalizes with NormalyzerDE}
 \usage{
-importFragpipeTMT(inputPath, jobname, outputPath)
+importFragpipeTMT(inputPath, jobname, outputPath, force = FALSE)
 }
 \arguments{
 \item{inputPath}{Input path where "metadata.csv", "contrast.csv" and "abundance_protein_MD.tsv" are located.}
 
 \item{jobname}{Specifies the folder name for NormalyzerDE, for convenience I always use the PROT-XXXX.}
+
+\item{force}{Default to FALSE. Forces normalyzer DE to run.}
 
 \item{outputpath}{Output path to save all the outputs.}
 }
