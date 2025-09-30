@@ -258,6 +258,11 @@ limmaFragpipeTMT <- function(inputPath, jobname, method = "quantile", outputPath
                         path = here::here(outputPath, "output", "tables", paste0(jobname, "_results.xlsx")),
                         format_headers = FALSE)
 
+    for(i in names(sheets)) {
+    readr::write_csv(x = sheets[[i]],
+                     path = here::here(outputPath, "output", "tables", paste0(jobname, "_", i, ".csv")))
+    }
+
   } else if (file.exists(here::here(outputPath, "output", "tables", paste0(jobname, "_results.xlsx")))) {
 
     print(paste0("Contrasts already performed and can be found in ",
@@ -269,6 +274,10 @@ limmaFragpipeTMT <- function(inputPath, jobname, method = "quantile", outputPath
                         path = here::here(outputPath, "output", "tables", paste0(jobname, "_results.xlsx")),
                         format_headers = FALSE)
 
-  }
+    for(i in names(sheets)) {
+      readr::write_csv(x = sheets[[i]],
+                       path = here::here(outputPath, "output", "tables", paste0(jobname, "_", i, ".csv")))
 
+    }
+  }
 }
