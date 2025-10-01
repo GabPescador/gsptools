@@ -7,8 +7,8 @@
 \format{
 A data frame:
 \describe{
-\item{ProteinName}{Protein Name}
-\item{ProteinID}{Protein ID from Uniprot}
+\item{protein_id}{Protein ID from Uniprot}
+\item{protein_name}{Protein name}
 \item{Yeat}{Yeast protein name}
 \item{Category}{Which step-wise category it is participating}
 \item{Type}{Sub-category, if exists}

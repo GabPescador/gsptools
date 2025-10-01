@@ -7,7 +7,8 @@
 \format{
 A data frame with 107 rows and 10 columns:
 \describe{
-\item{ProteinID}{Accession ID from uniprot}
+\item{protein_id}{Accession ID from uniprot}
+\item{protein_name}{Gene names taken from the first name of Gene Names column, should be unique}
 \item{Reviewed}{If protein ID is from reviewed list or not}
 \item{Entry Name}{Uniprot entry name}
 \item{Protein names}{Long format of protein name}
@@ -15,7 +16,6 @@ A data frame with 107 rows and 10 columns:
 \item{Organism}{Which organism it is from}
 \item{Length}{Aminoacid length of protein}
 \item{Ensembl}{Ensembl transcript ID mapped to the protein ID, might have multiple}
-\item{ProteinName}{Gene names taken from the first name of Gene Names column, should be unique}
 ...
 }
 }
