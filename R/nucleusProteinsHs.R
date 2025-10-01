@@ -4,14 +4,15 @@
 #'
 #' @format A data frame:
 #' \describe{
-#'   \item{ProteinID}{Accession ID from uniprot}
+#'   \item{protein_id}{Accession ID from uniprot}
+#'   \item{protein_name}{Gene names taken from the first name of Gene Names column, should be unique}
 #'   \item{Reviewed}{If protein ID is from reviewed list or not}
 #'   \item{Entry Name}{Uniprot entry name}
 #'   \item{Protein names}{Long format of protein name}
 #'   \item{Gene Names}{Short protein names assosicated with ID, might have multiple}
 #'   \item{Organism}{Which organism it is from}
 #'   \item{Length}{Aminoacid length of protein}
-#'   \item{ProteinName}{Gene names taken from the first name of Gene Names column, should be unique}
+
 #'   \item{Ensembl}{Ensembl transcript ID mapped to the protein ID, might have multiple}
 #'   ...
 #' }
