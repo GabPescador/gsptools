@@ -18,20 +18,20 @@ highlightProteins <- function(df,
   # based on significance (adj.p.val <= 0.05)
   # targets = df with the target proteins to highlight
   # contrasts = contrast to be used to filter in the case of DEA df
-  
+
   # First part is for DEA plots
   if ("contrast" %in% names(df)) {
-    hl <- filter(df, ProteinID %in% targets$ProteinID &
+    hl <- filter(df, protein_id %in% targets$protein_id &
                    contrast == contrasts)
     hl$type <- ifelse(hl$adj.P.Val <= 0.05,
                       "Sig",
                       "Non-Sig")
-    
+
     return(hl)
-    
+
   } else { # this part is for abundance plots
-    hl <- filter(df, ProteinID %in% targets$ProteinID)
-    
+    hl <- filter(df, protein_id %in% targets$protein_id)
+
     return(hl)
   }
 }
