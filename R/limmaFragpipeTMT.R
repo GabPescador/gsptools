@@ -13,10 +13,18 @@
 #' @param replicateFilter Defaults to TRUE. Filters proteins that are not present in at least 2 replicates.
 #' @param groups Defaults to FALSE. If TRUE, will use the type column in metadata.csv to search unique proteins based on those groupings.
 #' @param force Defaults to FALSE. Forces saving the results table in case it already exists.
+#' @param exclude Defaults to NULL. Defines a character vector of columns to be excluded from the pipeline.
 #' @return Generates the limma contrasts and saves them in the outputPath.
 #' @export
 
-limmaFragpipeTMT <- function(inputPath, jobname, method = "quantile", outputPath, replicateFilter = TRUE, groups = FALSE, force = FALSE){
+limmaFragpipeTMT <- function(inputPath,
+                             jobname,
+                             method = "quantile",
+                             outputPath,
+                             replicateFilter = TRUE,
+                             groups = FALSE,
+                             force = FALSE,
+                             exclude = NULL){
 
   # Check that tables are in the input folder
   if (file.exists(paste0(inputPath, "metadata.csv")) &
@@ -76,8 +84,23 @@ limmaFragpipeTMT <- function(inputPath, jobname, method = "quantile", outputPath
 
   }
 
-  metadata <- fread(here::here(inputPath, "metadata.csv")) %>%
-    mutate(across(where(is.character), snakecase::to_snake_case))
+  if (!is.null(exclude)) {
+
+    norm <- norm %>%
+      select(-exclude)
+
+    metadata <- fread(here::here(inputPath, "metadata.csv")) %>%
+      mutate(across(where(is.character), snakecase::to_snake_case)) %>%
+      filter(!sample %in% exclude)
+
+  } else {
+
+    norm <- norm
+
+    metadata <- fread(here::here(inputPath, "metadata.csv")) %>%
+      mutate(across(where(is.character), snakecase::to_snake_case))
+
+  }
 
   # QC for before and after normalization
   # Before normalization
