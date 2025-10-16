@@ -11,7 +11,8 @@ limmaFragpipeTMT(
   outputPath,
   replicateFilter = TRUE,
   groups = FALSE,
-  force = FALSE
+  force = FALSE,
+  exclude = NULL
 )
 }
 \arguments{
@@ -26,6 +27,8 @@ limmaFragpipeTMT(
 \item{groups}{Defaults to FALSE. If TRUE, will use the type column in metadata.csv to search unique proteins based on those groupings.}
 
 \item{force}{Defaults to FALSE. Forces saving the results table in case it already exists.}
+
+\item{exclude}{Defaults to NULL. Defines a character vector of columns to be excluded from the pipeline.}
 
 \item{outputpath}{Output path to save all the outputs.}
 }
