@@ -284,7 +284,8 @@ limmaFragpipeTMT <- function(inputPath,
     "Metadata" = metadata,
     "NormalizedAbundances" = norm,
     "Contrasts" = as.data.frame(contrast_formulas),
-    "limmaDEA" = df2,
+    "limmaDEA_long" = df,
+    "limmaDEA_wide" = df2,
     "UniqueProteins" = uniquePerGroup
   )
 
