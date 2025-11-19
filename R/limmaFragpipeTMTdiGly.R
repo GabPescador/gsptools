@@ -31,6 +31,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   if (file.exists(paste0(inputPath, "metadata.csv")) &
       file.exists(paste0(inputPath, "contrasts.csv")) &
       file.exists(paste0(inputPath, "abundance_single-site_MD.tsv")) &
+      file.exists(paste0(inputPath, "abundance_protein_MD.tsv")) &
       file.exists(Sys.glob(paste0(inputPath, "*normalized.txt")))) {
 
     print("Input tables exists, proceeding with pipeline...")
@@ -119,14 +120,14 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   tmt <- data.table::fread(here::here(inputPath, "abundance_single-site_MD.tsv")) %>%
     dplyr::rename("ModifiedSite" = "Index",
            "ProteinName" = "Gene",
-           "ProteinID" = "Protein ID") %>%
+           "ProteinID" = "ProteinID") %>%
     mutate(ProteinName = tolower(ProteinName)) %>%
     filter(!stringr::str_detect(.data$ProteinID, "Cont")) %>%
     filter(!stringr::str_detect(.data$ProteinID, "rev")) %>%
     setNames(snakecase::to_snake_case(names(.)))
 
   p1 <- tmt %>%
-    reshape2::melt(id.vars = colnames(tmt)[1:11]) %>%
+    reshape2::melt(id.vars = colnames(tmt)[1:9]) %>%
     ggplot(aes(x=.data$variable, y=.data$value)) +
     geom_boxplot() +
     theme_minimal() +
@@ -155,29 +156,27 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   if (replicateFilter == TRUE){
 
     norm_long <- norm %>%
-      reshape2::melt(id.vars = colnames(.)[1:7]) %>%
+      reshape2::melt(id.vars = colnames(.)[1:8]) %>%
       # select(protein_id, variable, value) %>%
       merge(., metadata[,-3], by.x = "variable", by.y = "sample")
 
     norm_filtered <- norm_long %>%
       filter(!is.na(value)) %>%
-      group_by(protein_id, group) %>%
+      group_by(modified_site, group) %>%
       summarize(counts =n())
 
-    norm_long <- merge(norm_long, norm_filtered, by = c("protein_id", "group"))
+    norm_long <- merge(norm_long, norm_filtered, by = c("modified_site", "group"))
 
     norm_long <- norm_long %>%
       mutate(value = if_else(counts < 2, NA_real_, value))
-      # group_by(protein_id, protein_name, group, protein, entry_id, entry_name, protein_description, indistinguishable_proteins) %>%
-      # summarize(mean = mean(value, na.rm=TRUE))
 
     norm <- norm_long %>%
       pivot_wider(
-        id_cols = c(protein_id, protein_name, protein, entry_id, entry_name, protein_description, indistinguishable_proteins),
+        id_cols = c(modified_site, protein_id, protein_name, peptide, sequence_window, start, end, max_pep_prob),
         names_from = variable,
         values_from = c(value),
         names_sep = "_"
-        )
+      )
 
   } else {
 
@@ -188,44 +187,44 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   if (groups == FALSE) {
   # Creating a list of unique proteins based on groups
   uniquePerGroup <- norm %>%
-    reshape2::melt(id.vars = colnames(.)[1:7]) %>%
-    select(protein_id, variable, value) %>%
+    reshape2::melt(id.vars = colnames(.)[1:8]) %>%
+    select(modified_site, protein_id, variable, value) %>%
     merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
     filter(!is.na(value)) %>%
-    group_by(protein_id) %>%
+    group_by(modified_site) %>%
     filter(n_distinct(group) == 1) %>%
     ungroup() %>%
-    distinct(protein_id, group)
+    distinct(modified_site, group)
 
-  uniquePerGroup <- merge(uniquePerGroup, norm[,c("protein_id", "protein_name")]) %>%
+  uniquePerGroup <- merge(uniquePerGroup, norm[,c("modified_site", "protein_id", "protein_name")]) %>%
     relocate(protein_name, .before = group)
 
   } else {
 
     uniquePerGroup <- norm %>%
-      reshape2::melt(id.vars = colnames(.)[1:7]) %>%
-      select(protein_id, variable, value) %>%
+      reshape2::melt(id.vars = colnames(.)[1:8]) %>%
+      select(modified_site, protein_id, variable, value) %>%
       merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
       filter(!is.na(value)) %>%
-      group_by(protein_id) %>%
+      group_by(modified_site) %>%
       filter(n_distinct(group) == 1) %>%
       ungroup() %>%
-      distinct(protein_id, group)
+      distinct(modified_site, group)
 
     # Creating a list of unique proteins based on groups
     uniquePerType <- norm %>%
-      reshape2::melt(id.vars = colnames(.)[1:7]) %>%
-      select(protein_id, variable, value) %>%
+      reshape2::melt(id.vars = colnames(.)[1:8]) %>%
+      select(modified_site, protein_id, variable, value) %>%
       merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
       filter(!is.na(value)) %>%
-      group_by(protein_id) %>%
+      group_by(modified_site) %>%
       filter(n_distinct(type) == 1) %>%
       ungroup() %>%
-      distinct(protein_id, type) %>%
+      distinct(modified_site, type) %>%
       rename("group" = "type")
 
     uniquePerGroup <- rbind(uniquePerGroup, uniquePerType)
-    uniquePerGroup <- merge(uniquePerGroup, norm[,c("protein_id", "protein_name")]) %>%
+    uniquePerGroup <- merge(uniquePerGroup, norm[,c("modified_site", "protein_id", "protein_name")]) %>%
       relocate(protein_name, .before = group)
 
   }
@@ -233,9 +232,9 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   # Matrix for limma
   ### Matrix table
   matrix_norm <- norm %>%
-    select(protein_id, indistinguishable_proteins:last_col(), -indistinguishable_proteins) %>%
+    select(modified_site, max_pep_prob:last_col(), -max_pep_prob) %>%
     as.data.frame() %>%
-    tibble::column_to_rownames("protein_id") %>%
+    tibble::column_to_rownames("modified_site") %>%
     as.matrix()
 
   ### Design table
@@ -264,9 +263,17 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   fit2 <- limma::contrasts.fit(fit, contrast.matrix)
   fit2 <- limma::eBayes(fit2)
 
-  grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "limma_mds-plot.pdf")))
-  limma::plotMDS(fit)
-  grDevices::dev.off()
+  if (dim(fit$design)[2] <= 2) {
+
+    print("Less than 2 samples, use a scatter plot to compare both samples.")
+
+  } else {
+
+    grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "limma_mds-plot.pdf")))
+    limma::plotMDS(fit)
+    grDevices::dev.off()
+
+  }
 
   # Saving contrasts
   df <- data.frame()
@@ -274,19 +281,20 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     temp <- data.frame()
     temp <- limma::topTable(fit2, coef=i, number=Inf)
     temp$contrast <- i
-    temp$protein_id <- rownames(temp)
-    temp <- dplyr::relocate(temp, "protein_id", .before = "logFC")
+    temp$modified_site <- rownames(temp)
+    temp <- dplyr::relocate(temp, "modified_site", .before = "logFC")
 
     df <- rbind(df, temp)
   }
 
   # Putting protein names back
-  df <- merge(df, norm[,c(1,2)], by = "protein_id") %>%
-    relocate(protein_name, .after = protein_id)
+  df <- merge(df, norm[,c(1,2,3)], by = "modified_site") %>%
+    relocate(protein_name, .after = modified_site) %>%
+    relocate(protein_id, .before = protein_name)
 
   df2 <- df %>%
     pivot_wider(
-      id_cols = c(protein_id, protein_name),
+      id_cols = c(modified_site),
       names_from = contrast,
       values_from = c(logFC, P.Value, adj.P.Val),
       names_sep = "_"
@@ -298,7 +306,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     "Contrasts" = as.data.frame(contrast_formulas),
     "limmaDEA_long" = df,
     "limmaDEA_wide" = df2,
-    "UniqueProteins" = uniquePerGroup
+    "UniqueSites" = uniquePerGroup
   )
 
   if (force == TRUE) {

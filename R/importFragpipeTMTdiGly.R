@@ -62,7 +62,7 @@ importFragpipeTMTdiGly <- function(inputPath, jobname, outputPath, force = FALSE
 
   ### rowData
       rowData <- tmt %>%
-        select(colnames(tmt)[c(1,3,5,6,7,8,10)])
+        select(colnames(tmt)[c(1,2,3,4,5,6,7,8)])
 
   ### SumarizedObject
       se <- SummarizedExperiment(assay=list(raw=matrix),
