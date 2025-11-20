@@ -38,7 +38,8 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
       tmt <- fread(here(inputPath, "abundance_protein_MD.tsv")) %>%
              rename("ProteinID" = "Index",
                     "ProteinName" = "Gene",
-                    "EntryID" = "Protein ID") %>%
+                    # "EntryID" = "Protein ID"
+                    ) %>%
         mutate(ProteinName = tolower(ProteinName)) %>%
         filter(!str_detect(ProteinID, "Cont")) %>%
         filter(!str_detect(ProteinID, "rev")) %>%
