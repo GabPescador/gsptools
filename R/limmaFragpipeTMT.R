@@ -107,14 +107,15 @@ limmaFragpipeTMT <- function(inputPath,
   tmt <- data.table::fread(here::here(inputPath, "abundance_protein_MD.tsv")) %>%
     dplyr::rename("ProteinID" = "Index",
            "ProteinName" = "Gene",
-           "EntryID" = "Protein ID") %>%
+           # "EntryID" = "Protein ID"
+           ) %>%
     mutate(ProteinName = tolower(ProteinName)) %>%
     filter(!stringr::str_detect(.data$ProteinID, "Cont")) %>%
     filter(!stringr::str_detect(.data$ProteinID, "rev")) %>%
     setNames(snakecase::to_snake_case(names(.)))
 
   p1 <- tmt %>%
-    reshape2::melt(id.vars = colnames(tmt)[1:11]) %>%
+    reshape2::melt(id.vars = colnames(tmt)[1:5]) %>%
     ggplot(aes(x=.data$variable, y=.data$value)) +
     geom_boxplot() +
     theme_minimal() +
@@ -125,7 +126,7 @@ limmaFragpipeTMT <- function(inputPath,
 
   # After normalization
   p2 <- norm %>%
-    reshape2::melt(id.vars = colnames(norm)[1:7]) %>%
+    reshape2::melt(id.vars = colnames(norm)[1:3]) %>%
     ggplot(aes(x=.data$variable, y=.data$value)) +
     geom_boxplot() +
     theme_minimal() +
@@ -143,7 +144,7 @@ limmaFragpipeTMT <- function(inputPath,
   if (replicateFilter == TRUE){
 
     norm_long <- norm %>%
-      reshape2::melt(id.vars = colnames(.)[1:7]) %>%
+      reshape2::melt(id.vars = colnames(.)[1:3]) %>%
       # select(protein_id, variable, value) %>%
       merge(., metadata[,-3], by.x = "variable", by.y = "sample")
 
@@ -161,7 +162,7 @@ limmaFragpipeTMT <- function(inputPath,
 
     norm <- norm_long %>%
       pivot_wider(
-        id_cols = c(protein_id, protein_name, protein, entry_id, entry_name, protein_description, indistinguishable_proteins),
+        id_cols = c(protein_id, protein_name, reference_intensity),
         names_from = variable,
         values_from = c(value),
         names_sep = "_"
@@ -176,7 +177,7 @@ limmaFragpipeTMT <- function(inputPath,
   if (groups == FALSE) {
   # Creating a list of unique proteins based on groups
   uniquePerGroup <- norm %>%
-    reshape2::melt(id.vars = colnames(.)[1:7]) %>%
+    reshape2::melt(id.vars = colnames(.)[1:3]) %>%
     select(protein_id, variable, value) %>%
     merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
     filter(!is.na(value)) %>%
@@ -191,7 +192,7 @@ limmaFragpipeTMT <- function(inputPath,
   } else {
 
     uniquePerGroup <- norm %>%
-      reshape2::melt(id.vars = colnames(.)[1:7]) %>%
+      reshape2::melt(id.vars = colnames(.)[1:3]) %>%
       select(protein_id, variable, value) %>%
       merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
       filter(!is.na(value)) %>%
@@ -202,7 +203,7 @@ limmaFragpipeTMT <- function(inputPath,
 
     # Creating a list of unique proteins based on groups
     uniquePerType <- norm %>%
-      reshape2::melt(id.vars = colnames(.)[1:7]) %>%
+      reshape2::melt(id.vars = colnames(.)[1:3]) %>%
       select(protein_id, variable, value) %>%
       merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
       filter(!is.na(value)) %>%
@@ -221,7 +222,7 @@ limmaFragpipeTMT <- function(inputPath,
   # Matrix for limma
   ### Matrix table
   matrix_norm <- norm %>%
-    select(protein_id, indistinguishable_proteins:last_col(), -indistinguishable_proteins) %>%
+    select(protein_id, reference_intensity:last_col(), -reference_intensity) %>%
     as.data.frame() %>%
     tibble::column_to_rownames("protein_id") %>%
     as.matrix()

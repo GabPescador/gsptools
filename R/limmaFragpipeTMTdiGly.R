@@ -12,6 +12,7 @@
 #' @param method Specifies the chosen normalization method, defaults to "quantile". Options are: "cycloess", "gi", "log2", "mean", "median", "quantile", "rlr"
 #' @param outputpath Output path to save all the outputs.
 #' @param replicateFilter Defaults to TRUE. Filters proteins that are not present in at least 2 replicates.
+#' @param proteinNormalization Defaults to FALSE. Normalizes diGly values for each site based on the input values of respective proteins.
 #' @param groups Defaults to FALSE. If TRUE, will use the type column in metadata.csv to search unique proteins based on those groupings.
 #' @param force Defaults to FALSE. Forces saving the results table in case it already exists.
 #' @param exclude Defaults to NULL. Defines a character vector of columns to be excluded from the pipeline.
@@ -23,6 +24,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
                              method = "quantile",
                              outputPath,
                              replicateFilter = TRUE,
+                             proteinNormalization = FALSE,
                              groups = FALSE,
                              force = FALSE,
                              exclude = NULL){
@@ -32,7 +34,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       file.exists(paste0(inputPath, "contrasts.csv")) &
       file.exists(paste0(inputPath, "abundance_single-site_MD.tsv")) &
       file.exists(paste0(inputPath, "abundance_protein_MD.tsv")) &
-      file.exists(Sys.glob(paste0(inputPath, "*normalized.txt")))) {
+      file.exists(Sys.glob(paste0(inputPath, "input_*normalized.txt")))) {
 
     print("Input tables exists, proceeding with pipeline...")
 
@@ -105,15 +107,31 @@ limmaFragpipeTMTdiGly <- function(inputPath,
 
   }
 
-  ## NEED TO TEST FIRST
   # Normalization to the input proteins
   # Import normalized protein input
-  # input <- data.table::fread(here::here(Sys.glob(paste0(inputPath, "*normalized.txt"))) %>%
-  #   setNames(snakecase::to_snake_case(names(.))) %>%
+  input <- data.table::fread(here::here(Sys.glob(paste0(inputPath, "input_*normalized.txt")))) %>%
+    setNames(snakecase::to_snake_case(names(.)))
 
+  long_norm <- norm %>%
+    reshape2::melt(id.vars = colnames(norm)[1:8])
 
+  long_input <- input %>%
+    reshape2::melt(id.vars = colnames(input)[1:3]) %>%
+    select(-protein_name, -reference_intensity) %>%
+    filter(!is.na(value)) %>%
+    rename("input" = "value")
 
+  long_norm_2 <- merge(long_norm, long_input,
+                       by = c("protein_id", "variable")) %>%
+    mutate(norm_value = value-input)
 
+  prot_norm <- long_norm_2 %>%
+    select(-value, -input) %>%
+    pivot_wider(
+      id_cols = c(modified_site, protein_id, protein_name, peptide, sequence_window, start, end, max_pep_prob),
+      names_from = variable,
+      values_from = c(norm_value),
+      names_sep = "_")
 
   # QC for before and after normalization
   # Before normalization
@@ -147,12 +165,31 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     ylab("Log2(Abundance)") +
     ggtitle("After Normalization")
 
+  p3 <- long_norm_2 %>%
+    ggplot(aes(x=.data$variable, y=.data$norm_value)) +
+    geom_boxplot() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    xlab("") +
+    ylab("Log2(diGly) - Log2(Input)") +
+    ggtitle("Protein-level Normalization")
+
   # Plots together
   grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_normalization_boxplot.pdf")))
-  print(cowplot::plot_grid(p1, p2, ncol = 2))
+  print(cowplot::plot_grid(p1, p2, p3, ncol = 3))
   grDevices::dev.off()
 
-  # Taking out proteins that are not present in at least 2 replicates if replicateFilter == TRUE
+  if (proteinNormalization == TRUE){
+
+    norm <- prot_norm
+
+  } else {
+
+    norm <- norm
+
+  }
+
+  # Taking out sites that are not present in at least 2 replicates if replicateFilter == TRUE
   if (replicateFilter == TRUE){
 
     norm_long <- norm %>%
@@ -303,6 +340,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   sheets <- list(
     "Metadata" = metadata,
     "NormalizedAbundances" = norm,
+    "ProteinNormalizedAbundances" = prot_norm,
     "Contrasts" = as.data.frame(contrast_formulas),
     "limmaDEA_long" = df,
     "limmaDEA_wide" = df2,
