@@ -29,12 +29,27 @@ limmaFragpipeTMTdiGly <- function(inputPath,
                              force = FALSE,
                              exclude = NULL){
 
+  if (proteinNormalization == TRUE){
+    # Check that tables are in the input folder
+    if (file.exists(paste0(inputPath, "metadata.csv")) &
+        file.exists(paste0(inputPath, "contrasts.csv")) &
+        file.exists(paste0(inputPath, "abundance_single-site_MD.tsv")) &
+        file.exists(paste0(inputPath, "abundance_protein_MD.tsv")) &
+        file.exists(Sys.glob(paste0(inputPath, "input_*normalized.txt")))) {
+
+      print("Input tables exists, proceeding with pipeline...")
+
+    } else {
+
+      stop("No metadata.csv, contrasts.csv, abundance_single-site_MD.tsv and/or normalized.txt found, stopping execution.")
+
+    }
+  } else {
+
   # Check that tables are in the input folder
   if (file.exists(paste0(inputPath, "metadata.csv")) &
       file.exists(paste0(inputPath, "contrasts.csv")) &
-      file.exists(paste0(inputPath, "abundance_single-site_MD.tsv")) &
-      file.exists(paste0(inputPath, "abundance_protein_MD.tsv")) &
-      file.exists(Sys.glob(paste0(inputPath, "input_*normalized.txt")))) {
+      file.exists(paste0(inputPath, "abundance_single-site_MD.tsv"))) {
 
     print("Input tables exists, proceeding with pipeline...")
 
@@ -42,8 +57,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
 
     stop("No metadata.csv, contrasts.csv, abundance_single-site_MD.tsv and/or normalized.txt found, stopping execution.")
 
+    }
   }
-
   # Create output directories in case they don't exist
   paths <- c(
     file.path(outputPath, "output", "plots"),
@@ -107,6 +122,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
 
   }
 
+  if (proteinNormalization == TRUE){
   # Normalization to the input proteins
   # Import normalized protein input
   input <- data.table::fread(here::here(Sys.glob(paste0(inputPath, "input_*normalized.txt")))) %>%
@@ -132,7 +148,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       names_from = variable,
       values_from = c(norm_value),
       names_sep = "_")
-
+  }
   # QC for before and after normalization
   # Before normalization
   tmt <- data.table::fread(here::here(inputPath, "abundance_single-site_MD.tsv")) %>%
@@ -165,6 +181,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     ylab("Log2(Abundance)") +
     ggtitle("After Normalization")
 
+  if (proteinNormalization == TRUE){
   p3 <- long_norm_2 %>%
     ggplot(aes(x=.data$variable, y=.data$norm_value)) +
     geom_boxplot() +
@@ -178,6 +195,13 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_normalization_boxplot.pdf")))
   print(cowplot::plot_grid(p1, p2, p3, ncol = 3))
   grDevices::dev.off()
+
+  } else {
+    # Plots together
+    grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_normalization_boxplot.pdf")))
+    print(cowplot::plot_grid(p1, p2, ncol = 2))
+    grDevices::dev.off()
+  }
 
   if (proteinNormalization == TRUE){
 
@@ -337,6 +361,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       names_sep = "_"
     )
 
+  if (proteinNormalization == TRUE){
   sheets <- list(
     "Metadata" = metadata,
     "NormalizedAbundances" = norm,
@@ -346,7 +371,16 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     "limmaDEA_wide" = df2,
     "UniqueSites" = uniquePerGroup
   )
-
+  } else {
+    sheets <- list(
+      "Metadata" = metadata,
+      "NormalizedAbundances" = norm,
+      "Contrasts" = as.data.frame(contrast_formulas),
+      "limmaDEA_long" = df,
+      "limmaDEA_wide" = df2,
+      "UniqueSites" = uniquePerGroup
+    )
+  }
   if (force == TRUE) {
 
     writexl::write_xlsx(x = sheets,

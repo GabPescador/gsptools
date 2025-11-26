@@ -8,5 +8,5 @@
 #'   \item{Hex}{Hexadecimal code}
 #'   ...
 #' }
-#' @source Color schemes were taken from [Paul Tol's website.](https://personal.sron.nl/~pault/)
+#' @source Color schemes were taken from [Paul Tol's website.](https://sronpersonalpages.nl/~pault/)
 "ColorPalette"
