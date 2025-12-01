@@ -245,6 +245,9 @@ limmaFragpipeTMTdiGly <- function(inputPath,
 
   }
 
+norm <- norm %>%
+  mutate(protein_name = toupper(protein_name))
+
   if (groups == FALSE) {
   # Creating a list of unique proteins based on groups
   uniquePerGroup <- norm %>%
@@ -376,11 +379,16 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   # Putting protein names back
   df <- merge(df, norm[,c(1,2,3)], by = "modified_site") %>%
     relocate(protein_name, .after = modified_site) %>%
-    relocate(protein_id, .before = protein_name)
+    relocate(protein_id, .before = protein_name) %>%
+    mutate(protein_name = toupper(protein_name)) %>%
+    mutate(site_name = paste0(protein_name,
+                              "_",
+                              str_split_fixed(modified_site, "_", n=Inf)[,2])) %>%
+    relocate(site_name, .after = protein_id)
 
   df2 <- df %>%
     pivot_wider(
-      id_cols = c(modified_site, protein_id, protein_name),
+      id_cols = c(modified_site, protein_id, site_name, protein_name),
       names_from = contrast,
       values_from = c(logFC, P.Value, adj.P.Val),
       names_sep = "_"
