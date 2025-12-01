@@ -228,7 +228,8 @@ limmaFragpipeTMT <- function(inputPath,
     as.matrix()
 
   ### Design table
-  design <- metadata
+  design <- metadata %>%
+    mutate(across(where(is.character), snakecase::to_snake_case))
   design_limma <- stats::model.matrix(~0 + factor(design$group))
   colnames(design_limma) <- levels(factor(design$group))
   rownames(design_limma) <- design$sample
