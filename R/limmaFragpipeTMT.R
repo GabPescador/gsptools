@@ -228,11 +228,34 @@ limmaFragpipeTMT <- function(inputPath,
     as.matrix()
 
   ### Design table
+  #### This comes from Claude, for some reason limma was not being able to keep the same order
+  #### of columns form the design and the abundance matrix. Although it worked fine outisde
+  #### the function, it was not working inside the function. This should now fix it.
   design <- metadata %>%
     mutate(across(where(is.character), snakecase::to_snake_case))
-  design_limma <- stats::model.matrix(~0 + factor(design$group))
-  colnames(design_limma) <- levels(factor(design$group))
+
+  # Match matrix_norm columns to design samples to get their groups
+  sample_order <- colnames(matrix_norm)
+  group_order_from_matrix <- as.character(design$group[match(sample_order, design$sample)])
+
+  # Get unique groups in the order they first appear in matrix_norm
+  group_order <- character()
+  for(sample in colnames(matrix_norm)) {
+    group <- design$group[design$sample == sample]
+    if(length(group) > 0 && !(group %in% group_order)) {
+      group_order <- c(group_order, group)
+    }
+  }
+
+  # Set factor levels based on this order
+  design$group <- factor(design$group, levels = group_order)
+
+  design_limma <- stats::model.matrix(~0 + design$group)
+  colnames(design_limma) <- levels(design$group)
   rownames(design_limma) <- design$sample
+
+  # Reorder matrix to match design
+  matrix_norm <- matrix_norm[, rownames(design_limma)]
 
   ### Contrast table
   contrast_table <- fread(here::here(inputPath, "contrasts.csv")) %>%
@@ -244,9 +267,10 @@ limmaFragpipeTMT <- function(inputPath,
     contrast_formulas <- c(contrast_formulas, temp)
   }
 
-  contrast.matrix <- limma::makeContrasts(
-    contrasts = contrast_formulas,
-    levels = design_limma
+  contrast.matrix <- do.call(
+    limma::makeContrasts,
+    c(as.list(setNames(contrast_formulas, contrast_formulas)),
+      list(levels = design_limma))
   )
 
   # Fit the data and create contrasts
