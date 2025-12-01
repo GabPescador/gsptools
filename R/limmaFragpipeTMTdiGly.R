@@ -299,7 +299,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     as.matrix()
 
   ### Design table
-  design <- metadata
+  design <- metadata %>%
+    mutate(across(where(is.character), snakecase::to_snake_case))
   design_limma <- stats::model.matrix(~0 + factor(design$group))
   colnames(design_limma) <- levels(factor(design$group))
   rownames(design_limma) <- design$sample
@@ -355,7 +356,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
 
   df2 <- df %>%
     pivot_wider(
-      id_cols = c(modified_site),
+      id_cols = c(modified_site, protein_id, protein_name),
       names_from = contrast,
       values_from = c(logFC, P.Value, adj.P.Val),
       names_sep = "_"
