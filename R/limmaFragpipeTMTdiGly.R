@@ -451,6 +451,40 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       split(.$contrast)
   }
 
+  # Site-ratio for Ube3-APA
+  ube3APA_diGly <- diGly %>%
+    select(modified_site, protein_id, max_pep_prob:last_col(), -max_pep_prob) %>%
+    mutate(position = parse_number(str_split_fixed(modified_site, "_", n=Inf)[,2])) %>%
+    select(-modified_site) %>%
+    rename("id" = "protein_id") %>%
+    relocate(id, .before = position) %>%
+    reshape2::melt(id.vars = c("id", "position")) %>%
+    mutate(group = str_remove(variable, "_[^_]*$")) %>%
+    group_by(id, position, group) %>%
+    summarize(mean = mean(value, na.rm=TRUE)) %>%
+    pivot_wider(
+      id_cols = c(id, position),
+      names_from = group,
+      values_from = mean,
+      names_sep = "_"
+    ) %>%
+    subtractContrastsWide(., contrast_table)
+
+  ube3APA_input <- input %>%
+    select(protein_id, reference_intensity:last_col(), -reference_intensity) %>%
+    rename("id" = "protein_id") %>%
+    reshape2::melt(id.vars = c("id")) %>%
+    mutate(group = str_remove(variable, "_[^_]*$")) %>%
+    group_by(id, group) %>%
+    summarize(mean = mean(value, na.rm=TRUE)) %>%
+    pivot_wider(
+      id_cols = c(id),
+      names_from = group,
+      values_from = mean,
+      names_sep = "_"
+    ) %>%
+    subtractContrastsWide(., contrast_table, diGly = FALSE)
+
   # Description of result tables
   description <- data.table::fread(system.file("extdata", "importFragpipeTMT_examples", "outputDescription.csv",
                                 package = "gsptools"))
@@ -463,7 +497,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       "NormalizedAbundances" = input,
       "Contrasts" = as.data.frame(contrast_formulas),
       "limmaDEA_long" = df_input,
-      "UniqueSites" = uniquePerGroup_input
+      "UniqueSites" = uniquePerGroup_input,
+      "Ube3-APA_siteratio" = ube3APA_input
     ),
   df2_input)
 
@@ -474,7 +509,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       "NormalizedAbundances" = diGly,
       "Contrasts" = as.data.frame(contrast_formulas),
       "limmaDEA_long" = df_diGly,
-      "UniqueSites" = uniquePerGroup_diGly
+      "UniqueSites" = uniquePerGroup_diGly,
+      "Ube3-APA_siteratio" = ube3APA_diGly
     ),
   df2_diGly)
 
@@ -486,7 +522,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
         "NormalizedAbundances" = diGly,
         "Contrasts" = as.data.frame(contrast_formulas),
         "limmaDEA_long" = df_diGly,
-        "UniqueSites" = uniquePerGroup_diGly
+        "UniqueSites" = uniquePerGroup_diGly,
+        "Ube3-APA_siteratio" = ube3APA_diGly
       ),
     df2_diGly)
   }

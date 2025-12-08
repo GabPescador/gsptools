@@ -63,7 +63,7 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
 
   ### rowData
       rowData <- tmt %>%
-        select(colnames(tmt)[c(1,3,5,6,7,8,10)])
+        select("protein_id","protein_name", "reference_intensity")
 
   ### SumarizedObject
       se <- SummarizedExperiment(assay=list(raw=matrix),
