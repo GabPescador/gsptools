@@ -451,11 +451,14 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       split(.$contrast)
   }
 
+  # Description of result tables
+  description <- data.table::fread(system.file("extdata", "importFragpipeTMT_examples", "outputDescription.csv",
+                                package = "gsptools"))
+
   if (proteinInput == TRUE){
   sheets_input <- c(
-    list(data.table::fread(system.file("inst", "extdata", "importFragpipeTMT_examples", "outputDescription.csv",
-                                       package = "gsptools"))),
     list(
+      "Description" = description,
       "Metadata" = metadata,
       "NormalizedAbundances" = input,
       "Contrasts" = as.data.frame(contrast_formulas),
@@ -465,9 +468,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   df2_input)
 
   sheets_diGly <- c(
-    list(data.table::fread(system.file("inst", "extdata", "importFragpipeTMT_examples", "outputDescription.csv",
-                                       package = "gsptools"))),
     list(
+      "Description" = description,
       "Metadata" = metadata,
       "NormalizedAbundances" = diGly,
       "Contrasts" = as.data.frame(contrast_formulas),
@@ -478,9 +480,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
 
   } else {
     sheets_diGly <- c(
-      list(data.table::fread(system.file("inst", "extdata", "importFragpipeTMT_examples", "outputDescription.csv",
-                                         package = "gsptools"))),
       list(
+        "Description" = description,
         "Metadata" = metadata,
         "NormalizedAbundances" = diGly,
         "Contrasts" = as.data.frame(contrast_formulas),
