@@ -20,10 +20,9 @@
 
 limmaFragpipeTMTdiGly <- function(inputPath,
                              jobname,
-                             method = "quantile",
                              outputPath,
                              replicateFilter = TRUE,
-                             proteinInput = FALSE,
+                             proteinInput = TRUE,
                              groups = FALSE,
                              force = FALSE,
                              exclude = NULL){
