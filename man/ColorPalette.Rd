@@ -13,7 +13,7 @@ A data frame with 9 rows and 2 columns:
 }
 }
 \source{
-Color schemes were taken from \href{https://personal.sron.nl/~pault/}{Paul Tol's website.}
+Color schemes were taken from \href{https://sronpersonalpages.nl/~pault/}{Paul Tol's website.}
 }
 \usage{
 ColorPalette

@@ -10,6 +10,7 @@ limmaFragpipeTMTdiGly(
   method = "quantile",
   outputPath,
   replicateFilter = TRUE,
+  proteinInput = FALSE,
   groups = FALSE,
   force = FALSE,
   exclude = NULL
@@ -20,9 +21,9 @@ limmaFragpipeTMTdiGly(
 
 \item{jobname}{Specifies the folder name for NormalyzerDE, for convenience I always use the PROT-XXXX.}
 
-\item{method}{Specifies the chosen normalization method, defaults to "quantile". Options are: "cycloess", "gi", "log2", "mean", "median", "quantile", "rlr"}
-
 \item{replicateFilter}{Defaults to TRUE. Filters proteins that are not present in at least 2 replicates.}
+
+\item{proteinInput}{Defaults to TRUE. Includes protein input for limma contrasts.}
 
 \item{groups}{Defaults to FALSE. If TRUE, will use the type column in metadata.csv to search unique proteins based on those groupings.}
 

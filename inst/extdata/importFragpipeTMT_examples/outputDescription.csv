@@ -1,0 +1,7 @@
+﻿sheet_name,description
+Metadata,Metadata from experiment and how samples were grouped together.
+NormalizedAbundances,Normalized abundances of all sites/proteins identified by FragPipe.
+Contrasts,"Contrasts performed by limma. Results should be interpreted as group1/group2, so positive FC mean higher levels in group1 compared to group2."
+limmaDEA_long,Output from limma in long format. Filter based on the column contrast for specific comparisons.
+UniqueSites,"Unique sites/proteins in each group. These will likely not be present in the limma results, as linear models cannot perform statistics in things that are present in one group but not in another. Group collumn refers to which group this site/protein was identified."
+*contrast names*,Output from limma in wide format for more human readable friendly data. You should have one sheet per contrast specified in Contrasts.
