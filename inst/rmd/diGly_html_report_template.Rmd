@@ -1,12 +1,14 @@
 ---
-title: "TMT diGly Report"
+title: "`r paste0(params$report_title, ' TMT diGly Report')`"
 author: da Silva Pescador, G
 output: html_document
 params:
   results: NA
+  report_title: NA
 editor_options: 
   chunk_output_type: console
 ---
+
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 knitr::opts_chunk$set(
   echo = FALSE,
@@ -31,6 +33,7 @@ Descriptions of each sheet included in the document can be found in the first pa
 
 ```{r}
 # Download button for the xlsx file
+
 ```
 
 # Quality Control
@@ -41,16 +44,24 @@ This step is performed by the NormalyzerDE package (specialized for TMT data), a
 
 Ideally, all boxplots have a similar distribution between replicates.
 
-```{r}
-# Boxplots of abundances, both digly and input
+```{r, fig.height=11, fig.width=8}
+print(params$results[["Quality Control"]]$plots[["InputNormalization"]])
+```
+
+```{r, fig.height=11, fig.width=8}
+print(params$results[["Quality Control"]]$plots[["diGlyNormalization"]])
 ```
 
 ## Correlation Plots
 
 Ideally, all replicates from the same group should cluster together and have > 0.9 correlation coefficient. For proteomics data it is not unusual to consider > 0.8 as good correlation between replicates.
 
-```{r}
-# Plot for correlation, both digly and input side by side
+```{r, fig.height=11, fig.width=8}
+print(params$results[["Quality Control"]]$plots[["InputCor"]])
+```
+
+```{r, fig.height=11, fig.width=8}
+print(params$results[["Quality Control"]]$plots[["diGlyCor"]])
 ```
 
 ## PCA Plots
@@ -59,8 +70,8 @@ Ideally, groups should cluster together. If there is technical variance you migh
 
 If that's the case, one might decide to get rid of a weird replicate. Alternatively, one might want to correct the bacth effect by applying something like [proBatch](https://www.embopress.org/doi/full/10.15252/msb.202110240).
 
-```{r}
-# PCA plots, both diGly and input side by side
+```{r, fig.height=11, fig.width=8}
+print(params$results[["Quality Control"]]$plots[["PCA"]])
 ```
 
 # Data Visualization
@@ -70,15 +81,42 @@ All comparative plots are based on the specified contrasts below, where groups a
 In addition, all plots are highlighted for ribosome proteins and biogenesis factors, based on [this paper](https://doi.org/10.15252/embj.2022112699). The list with details on each protein function can be downloaded below.
 
 ```{r}
-# Insert contrast table here
-knitr::kable(head(params$table4))
+knitr::kable(params$results[["Quality Control"]]$tables[["Contrasts"]])
 
-DT::datatable(biogenesisProteinOrder,
+DT::datatable(gsptools::biogenesisProteinOrder,
     extensions = 'Buttons',
+    caption = "Biogenesis Factors",
     options = list(
-    dom = 'Bfrtip',
-    buttons = c('csv', 'excel'),
-    caption = "Biogenesis Factors"
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel'),
+    )
+  )
+```
+
+## Unique modified sites/proteins
+
+All comparative plots exclude unique modified sites/proteins since they cannot perform statistics on things that are present in one sample but not in another. These are still interesting candidates and are summarized in the list below.
+
+Be mindful that the pipeline defines sites/proteins that are not found in at least 2 replicates as not expressed in the samples. Therefore, unique sites/proteins might come from things that were present in just one replicate rather than completely not present in a certain sample.
+
+```{r}
+DT::datatable(param$results[["Quality Control"]]$tables[["InputUnique"]],
+    extensions = 'Buttons',
+    caption = "Input Unique Proteins",
+    options = list(
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel')
+    )
+  )
+```
+
+```{r}
+DT::datatable(param$results[["Quality Control"]]$tables[["diGlyUnique"]],
+    extensions = 'Buttons',
+    caption = "diGly Unique Modified Sites",
+    options = list(
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel')
     )
   )
 ```
@@ -86,32 +124,33 @@ DT::datatable(biogenesisProteinOrder,
 ## Volcano Plots
 
 ### Input total proteome
-```{r}
-# All volcano plots for each comparison, both diGly and input
-# For this, add a column in the contrast table for which gene to highlight in all plots
+```{r, fig.height=11, fig.width=8}
+print(params$results[["Visualization"]]$plots[["InputVolcanoPlots"]])
+```
 
-# also add a table for the significant proteins
-DT::datatable(XXX,
+```{r}
+DT::datatable(params$results[["Visualization"]]$tables[["InputSig"]],
     extensions = 'Buttons',
+    caption = "Input Sig Proteins",
     options = list(
-    dom = 'Bfrtip',
-    buttons = c('csv', 'excel'),
-    caption = "Biogenesis Factors"
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel'),
     )
   )
 ```
 
 ### diGly
-```{r}
-# All volcano plots for each comparison, both diGly and input
+```{r, fig.height=11, fig.width=8}
+print(params$results[["Visualization"]]$plots[["diGlyVolcanoPlots"]])
+```
 
-# also add a table for the significant proteins
-DT::datatable(XXX,
+```{r}
+DT::datatable(params$results[["Visualization"]]$tables[["diGlySig"]],
     extensions = 'Buttons',
+    caption = "diGly Sig Proteins",
     options = list(
-    dom = 'Bfrtip',
-    buttons = c('csv', 'excel'),
-    caption = "Biogenesis Factors"
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel'),
     )
   )
 ```
@@ -122,16 +161,17 @@ One important aspect of diGly experiments is to compare fold changes of modified
 
 Therefore, these scatter plots provide a more tailored list of candidates taking into account changes at the total proteome level.
 
-```{r}
-# Add all contrasts scatter plots in here
+```{r, fig.height=11, fig.width=8}
+print(params$results[["Visualization"]]$plots[["ScatterPlots"]])
+```
 
-# also add a table for the significant proteins based on this
-DT::datatable(XXX,
+```{r}
+DT::datatable(params$results[["Visualization"]]$tables[["ScatterSig"]],
     extensions = 'Buttons',
+    caption = "Scatter Sig Proteins",
     options = list(
-    dom = 'Bfrtip',
-    buttons = c('csv', 'excel'),
-    caption = "Biogenesis Factors"
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel'),
     )
   )
 ```
@@ -142,22 +182,21 @@ This analysis assumes that if one E3 Ligase is active, all of its substrates sho
 
 In summary, we calculate the ratios between one condition and the control (e.g., mut-wt), normalize these ratios based on the total proteome ratios (when total proteome data is matched) and perform statistics comparing the E3 ligase substrate ratios to a randomly selected group of proteins of similar size. More information on how the analysis is done can be found in [the paper](https://doi.org/10.1093/bioinformatics/btac069).
 
-As with all other comparative plots, these use the contrasts defined in the contrast table in the Data Visualization chapter.
+As with all other comparative plots, these use the contrasts defined in the contrast table in the Data Visualization section.
 
-```{r}
-# Add here the volcano plot for the Ube3-APA analysis
-
-# Also add the tables generated from the analysis
+```{r, fig.height=11, fig.width=8}
+print(params$results[["E3 Ligase Analysis"]]$plots[["VolcanoPlots"]])
 ```
 
 ```{r}
-knitr::kable(head(params$table4, digits = 3))
-```
-```{r, fig.height=8, fig.width=11}
-params$plot4
-```
-```{r}
-knitr::kable(params$table5, digits = 3)
+DT::datatable(params$results[["E3 Ligase Analysis"]]$tables[["E3Sig"]],
+    extensions = 'Buttons',
+    caption = "E3 Ligase Enrichment",
+    options = list(
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel'),
+    )
+  )
 ```
 
 # System Info
