@@ -88,7 +88,7 @@ DT::datatable(gsptools::biogenesisProteinOrder,
     caption = "Biogenesis Factors",
     options = list(
       dom = 'Bfrtip',
-      buttons = c('csv', 'excel'),
+      buttons = c('csv', 'excel')
     )
   )
 ```
@@ -134,7 +134,7 @@ DT::datatable(params$results[["Visualization"]]$tables[["InputSig"]],
     caption = "Input Sig Proteins",
     options = list(
       dom = 'Bfrtip',
-      buttons = c('csv', 'excel'),
+      buttons = c('csv', 'excel')
     )
   )
 ```
@@ -150,7 +150,7 @@ DT::datatable(params$results[["Visualization"]]$tables[["diGlySig"]],
     caption = "diGly Sig Proteins",
     options = list(
       dom = 'Bfrtip',
-      buttons = c('csv', 'excel'),
+      buttons = c('csv', 'excel')
     )
   )
 ```
@@ -171,7 +171,7 @@ DT::datatable(params$results[["Visualization"]]$tables[["ScatterSig"]],
     caption = "Scatter Sig Proteins",
     options = list(
       dom = 'Bfrtip',
-      buttons = c('csv', 'excel'),
+      buttons = c('csv', 'excel')
     )
   )
 ```
@@ -194,7 +194,7 @@ DT::datatable(params$results[["E3 Ligase Analysis"]]$tables[["E3Sig"]],
     caption = "E3 Ligase Enrichment",
     options = list(
       dom = 'Bfrtip',
-      buttons = c('csv', 'excel'),
+      buttons = c('csv', 'excel')
     )
   )
 ```
