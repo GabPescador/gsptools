@@ -100,7 +100,7 @@ All comparative plots exclude unique modified sites/proteins since they cannot p
 Be mindful that the pipeline defines sites/proteins that are not found in at least 2 replicates as not expressed in the samples. Therefore, unique sites/proteins might come from things that were present in just one replicate rather than completely not present in a certain sample.
 
 ```{r}
-DT::datatable(param$results[["Quality Control"]]$tables[["InputUnique"]],
+DT::datatable(params$results[["Quality Control"]]$tables[["InputUnique"]],
     extensions = 'Buttons',
     caption = "Input Unique Proteins",
     options = list(
@@ -111,7 +111,7 @@ DT::datatable(param$results[["Quality Control"]]$tables[["InputUnique"]],
 ```
 
 ```{r}
-DT::datatable(param$results[["Quality Control"]]$tables[["diGlyUnique"]],
+DT::datatable(params$results[["Quality Control"]]$tables[["diGlyUnique"]],
     extensions = 'Buttons',
     caption = "diGly Unique Modified Sites",
     options = list(
