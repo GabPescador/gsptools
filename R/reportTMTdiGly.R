@@ -14,27 +14,27 @@ reportTMTdiGly <- function(path,
   ########################################
   #        Quality Control Plots         #
   ########################################
-  
+
   print("Generating quality control plots...")
-  
+
   #       Normalization Boxplots         #
   ########################################
-  
+
   # Define theme to use in boxplots
   norm_boxplot <- list(
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 45, hjust = 1))
     )
-  
+
   # load input data
   input_raw <- data.table::fread(Sys.glob(paste0(path, "/4_input/abundance_protein_MD.tsv"))) %>%
     select(Index, ReferenceIntensity:last_col(), -ReferenceIntensity) %>%
     reshape2::melt()
-  
+
   input_norm <- data.table::fread(Sys.glob(paste0(path, "4_input/input*normalized.txt"))) %>%
     select(protein_id, reference_intensity:last_col(), -reference_intensity) %>%
     reshape2::melt()
-  
+
   p1 <- input_raw %>%
     ggplot(aes(x=variable, y=value)) +
     geom_boxplot() +
@@ -42,7 +42,7 @@ reportTMTdiGly <- function(path,
     xlab("") +
     ggtitle("Input Before Normalization") +
     norm_boxplot
-  
+
   p2 <- input_norm %>%
     ggplot(aes(x=variable, y=value)) +
     geom_boxplot() +
@@ -50,20 +50,20 @@ reportTMTdiGly <- function(path,
     xlab("") +
     ggtitle("Input After Normalization") +
     norm_boxplot
-  
+
   ########################################
   QCp1 <- cowplot::plot_grid(p1, p2, ncol = 2)
   ########################################
-  
+
   # Load diGly data
   diGly_raw <- data.table::fread(Sys.glob(paste0(path, "/4_input/abundance_single-site_MD.tsv"))) %>%
     select(Index, ReferenceIntensity:last_col(), -ReferenceIntensity) %>%
     reshape2::melt()
-  
+
   diGly_norm <- data.table::fread(Sys.glob(paste0(path, "/4_input/diGly*normalized.txt"))) %>%
     select(modified_site, max_pep_prob:last_col(), -max_pep_prob) %>%
     reshape2::melt()
-  
+
   p1 <- diGly_raw %>%
     ggplot(aes(x=variable, y=value)) +
     geom_boxplot() +
@@ -71,7 +71,7 @@ reportTMTdiGly <- function(path,
     xlab("") +
     ggtitle("diGly Before Normalization") +
     norm_boxplot
-  
+
   p2 <- diGly_norm %>%
     ggplot(aes(x=variable, y=value)) +
     geom_boxplot() +
@@ -79,21 +79,21 @@ reportTMTdiGly <- function(path,
     xlab("") +
     ggtitle("diGly After Normalization") +
     norm_boxplot
-  
+
   ########################################
   QCp2 <- cowplot::plot_grid(p1, p2, ncol = 2)
   ########################################
-  
+
   #           Correlation Plots          #
   ########################################
-  
+
   input_omit <- data.table::fread(Sys.glob(paste0(path, "/4_input/input*normalized.txt"))) %>%
     select(protein_id, reference_intensity:last_col(), -reference_intensity) %>%
     tibble::column_to_rownames("protein_id") %>%
-    na.omit() 
-  
+    na.omit()
+
   correlation <- cor(input_omit, use = "complete.obs")
-  
+
   p1 <- ComplexHeatmap::Heatmap(correlation,
                                 name = "Correlation",
                                 column_title = "Input Correlation",
@@ -101,14 +101,14 @@ reportTMTdiGly <- function(path,
                                 show_row_names = TRUE,
                                 show_column_names = TRUE,
                                 border = TRUE)
-  
+
   diGly_omit <- data.table::fread(Sys.glob(paste0(path, "/4_input/diGly*normalized.txt"))) %>%
     select(modified_site, max_pep_prob:last_col(), -max_pep_prob) %>%
     tibble::column_to_rownames("modified_site") %>%
-    na.omit() 
-  
+    na.omit()
+
   correlation <- cor(diGly_omit, use = "complete.obs")
-  
+
   p2 <- ComplexHeatmap::Heatmap(correlation,
                                 name = "Correlation",
                                 column_title = "diGly Correlation",
@@ -116,26 +116,26 @@ reportTMTdiGly <- function(path,
                                 show_row_names = TRUE,
                                 show_column_names = TRUE,
                                 border = TRUE)
-  
+
   ########################################
   QCp3 <- p1
   QCp4 <- p2
   ########################################
-  
+
   #               PCA Plots              #
   ########################################
-  
+
   #compute the principal components
   data_filtered_pca <- FactoMineR::PCA(t(input_omit), graph = FALSE)
   p1 <- factoextra::fviz_eig(data_filtered_pca, addlabels=TRUE)
-  
+
   #extract the PCA scores for dim 1 and dim 2 so we can make our own plots.
-  scores <- as.data.frame(data_filtered_pca$ind$coord) |> 
+  scores <- as.data.frame(data_filtered_pca$ind$coord) |>
     tibble::rownames_to_column(var = "Replicates") %>%
     mutate(Group = str_remove(Replicates, "_[^_]*$"))
   dim1_score <- round(p1$data$eig[1], digits = 1)
   dim2_score <- round(p1$data$eig[2], digits = 1)
-  
+
   #plots for PCA
   p2 <- ggplot(scores, aes(x=Dim.1, y = Dim.2, color=Group, label = Replicates)) +
     geom_point(size = 4) +
@@ -146,18 +146,18 @@ reportTMTdiGly <- function(path,
     theme_classic() +
     theme(legend.position = "bottom") +
     ggtitle("Input PCA")
-  
+
   #compute the principal components
   data_filtered_pca <- FactoMineR::PCA(t(diGly_omit), graph = FALSE)
   p1 <- factoextra::fviz_eig(data_filtered_pca, addlabels=TRUE)
-  
+
   #extract the PCA scores for dim 1 and dim 2 so we can make our own plots.
-  scores <- as.data.frame(data_filtered_pca$ind$coord) |> 
+  scores <- as.data.frame(data_filtered_pca$ind$coord) |>
     tibble::rownames_to_column(var = "Replicates") %>%
     mutate(Group = str_remove(Replicates, "_[^_]*$"))
   dim1_score <- round(p1$data$eig[1], digits = 1)
   dim2_score <- round(p1$data$eig[2], digits = 1)
-  
+
   #plots for PCA
   p3 <- ggplot(scores, aes(x=Dim.1, y = Dim.2, color=Group, label = Replicates)) +
     geom_point(size = 4) +
@@ -168,17 +168,17 @@ reportTMTdiGly <- function(path,
     theme_classic() +
     theme(legend.position = "bottom") +
     ggtitle("diGly PCA")
-  
+
   ########################################
   QCp5 <- cowplot::plot_grid(p2, p3, ncol = 2)
   ########################################
-  
+
   ########################################
   #         Data Visualization           #
   ########################################
-  
+
   print("Generating visualization plots...")
- 
+
   contrasts <- data.table::fread(
     Sys.glob(
       paste0(
@@ -186,10 +186,10 @@ reportTMTdiGly <- function(path,
         "/output/tables/*diGly_Contrasts.csv"
         )
       )[which.max(file.info(Sys.glob(paste0(path, "/output/tables/*diGly_Contrasts.csv")))$mtime)]) # To get the most recent file in case there's more than one
-  
+
   #        Unique Sites/Proteins         #
   ########################################
-  
+
   diGlyUnique <- data.table::fread(
     Sys.glob(
       paste0(
@@ -197,7 +197,7 @@ reportTMTdiGly <- function(path,
         "/output/tables/*diGly_UniqueSites.csv"
         )
       )[which.max(file.info(Sys.glob(paste0(path, "/output/tables/*diGly_UniqueSites.csv")))$mtime)])
-  
+
   inputUnique <- data.table::fread(
     Sys.glob(
       paste0(
@@ -205,10 +205,10 @@ reportTMTdiGly <- function(path,
         "/output/tables/*input_UniqueSites.csv"
       )
     )[which.max(file.info(Sys.glob(paste0(path, "/output/tables/*input_UniqueSites.csv")))$mtime)])
-  
+
   #            Volcano Plots             #
   ########################################
-  
+
   inputFC <- data.table::fread(
     Sys.glob(
       paste0(
@@ -225,7 +225,7 @@ reportTMTdiGly <- function(path,
     mutate(Biogenesis = ifelse(protein_id %in% c(ribosomeProteinsHs$protein_id,biogenesisProteinOrder$protein_id),
                                "Biogenesis/Ribosome",
                                ""))
-  
+
   plots <- list()
   for(i in unique(inputFC$contrast)){
     p1 <- inputFC %>%
@@ -247,14 +247,14 @@ reportTMTdiGly <- function(path,
       geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
       geom_vline(xintercept = c(-1,1), linetype = "dashed") +
       ggtitle(paste0("Input ", i))
-    
+
     plots[[i]] <- p1
   }
-  
+
   ########################################
   Vp1 <- patchwork::wrap_plots(plots, ncol = 2, widths = 3, heights = 3)
   ########################################
-  
+
   diGlyFC <- data.table::fread(
     Sys.glob(
       paste0(
@@ -271,7 +271,7 @@ reportTMTdiGly <- function(path,
     mutate(Biogenesis = ifelse(protein_id %in% c(ribosomeProteinsHs$protein_id,biogenesisProteinOrder$protein_id),
                                "Biogenesis/Ribosome",
                                ""))
-  
+
   plots <- list()
   for(i in unique(diGlyFC$contrast)){
     p1 <- diGlyFC %>%
@@ -293,39 +293,39 @@ reportTMTdiGly <- function(path,
       geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
       geom_vline(xintercept = c(-1,1), linetype = "dashed") +
       ggtitle(paste0("diGly ", i))
-    
+
     plots[[i]] <- p1
   }
-  
+
   ########################################
   Vp2 <- patchwork::wrap_plots(plots, ncol = 2, widths = 3, heights = 3)
   ########################################
-  
+
   #          Significant Genes           #
   ########################################
-  
+
   Vdf1 <- inputFC %>%
     filter(Sig == "Significant")
-  
+
   Vdf2 <- diGlyFC %>%
     filter(Sig == "Significant")
-  
+
   #            Scatter Plots             #
   ########################################
-  
+
   df1 <- inputFC %>%
     select(-AveExpr, -t, -P.Value, -B, -Sig, -Color, -Biogenesis) %>%
     rename("input_logFC" = "logFC",
            "input_adj.P.Val" = "adj.P.Val")
-  
+
   df2 <- diGlyFC %>%
     select(-AveExpr, -t, -P.Value, -B) %>%
     rename("diGly_logFC" = "logFC",
            "diGly_adj.P.Val" = "adj.P.Val")
-  
+
   df3 <- merge(df2, df1,
                by = c("protein_id", "protein_name", "contrast"))
-  
+
   plots <- list()
   for(i in unique(df3$contrast)){
     p1 <- df3 %>%
@@ -347,25 +347,25 @@ reportTMTdiGly <- function(path,
       geom_hline(yintercept = c(-1,1), linetype = "dashed") +
       geom_vline(xintercept = c(-1,1), linetype = "dashed") +
       ggtitle(paste0(i))
-    
-    plots[[i]] <- p1 
+
+    plots[[i]] <- p1
   }
-  
+
   ########################################
   Vp3 <- patchwork::wrap_plots(plots, ncol = 2, widths = 3, heights = 3)
   ########################################
-  
+
   #          Significant Genes           #
   ########################################
-  
+
   Vdf3 <- df3 %>%
     filter(Sig == "Significant" &
              abs(input_logFC) <= 1)
-  
+
   ########################################
   #     E3 Ligase Enrichment Analysis    #
   ########################################
-  
+
   ube3APA <- Sys.glob(
     paste0(
       path,
@@ -382,7 +382,7 @@ reportTMTdiGly <- function(path,
     mutate(Color = ifelse(Sig == "Significant",
                           "#AA4499",
                           "#BBBBBB"))
-  
+
   plots <- list()
   for(i in unique(ube3APA$contrast)){
     p1 <- ube3APA %>%
@@ -397,24 +397,24 @@ reportTMTdiGly <- function(path,
                       aes(label = leading_e3ligase),
                       size = 2) +
       ggtitle(paste0(i))
-    
-    plots[[i]] <- p1 
+
+    plots[[i]] <- p1
   }
-  
+
   ########################################
   E3p1 <- patchwork::wrap_plots(plots, ncol = 2, widths = 3, heights = 3)
   ########################################
-  
+
   #          Significant Genes           #
   ########################################
-  
+
   E3df1 <- ube3APA %>%
     filter(Sig == "Significant")
-  
+
   ########################################
   #           List of Results            #
   ########################################
-  
+
   results <- list(
     "Quality Control" = list(
       plots = list(
@@ -451,19 +451,19 @@ reportTMTdiGly <- function(path,
       )
     )
   )
-  
+
   ########################################
   #          Render HTML Report          #
   ########################################
-  
+
   if (!dir.exists(paste0(path, "/output/report"))) {
     dir.create(paste0(path, "/output/report"))
   }
-  
+
   template <- system.file("rmd", "diGly_html_report_template.Rmd", package = "gsptools")
   outDir <- paste0(path, "/output/report")
-  
-  suppressMessages({
+
+  suppressMessages(
   rmarkdown::render(
     input = template,
     output_file = paste0(jobname, "_report.html"),
@@ -472,9 +472,9 @@ reportTMTdiGly <- function(path,
                   report_title = jobname),
     envir = new.env(parent = globalenv())
   )
-  }
+
   print("########################################")
   print("Done! HTML report saved to: ", normalizePath(outDir))
   print("########################################")
-  
+
 }
