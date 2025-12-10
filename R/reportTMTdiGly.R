@@ -453,6 +453,17 @@ reportTMTdiGly <- function(path,
   )
 
   ########################################
+  #        Path to Results files         #
+  ########################################
+
+  excel <- Sys.glob(
+    paste0(
+      path,
+      "/output/tables/*_results.xlsx"
+    )
+  )
+  excel <- excel[!grepl("~\\$", excel)] # Get rid of temporary files that might be present
+  ########################################
   #          Render HTML Report          #
   ########################################
 
@@ -468,12 +479,13 @@ reportTMTdiGly <- function(path,
     output_file = paste0(jobname, "_report.html"),
     output_dir = normalizePath(outDir),
     params = list(results = results,
-                  report_title = jobname),
+                  report_title = jobname,
+                  excel_files = excel),
     envir = new.env(parent = globalenv())
     )
 
   print("########################################")
-  print("Done! HTML report saved to: ", normalizePath(outDir))
+  print(paste0("Done! HTML report saved to: ", normalizePath(outDir)))
   print("########################################")
 
 }

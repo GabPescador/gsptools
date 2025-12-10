@@ -10,6 +10,7 @@ output:
 params:
   results: NA
   report_title: NA
+  excel_files: NA
 editor_options: 
   chunk_output_type: console
 ---
@@ -30,29 +31,37 @@ Specifically, this report will go over standard quality control plots (PCA, corr
 
 This will function as an intermediate step while I slowly build a ShinnyApp for users to explore the data interactively.
 
-# Results file
+# Result files
 
 This report uses as a base the PROT-XXXX_results.xlsx file, where all data is compiled after analysis and can be downloaded below. XXXX will be the LIMS number related to your proteomics project submitted.
 
 Descriptions of each sheet included in the document can be found in the first page "Description" of the excel file.
 
 ```{r}
-# Download button for the xlsx file
-
+downloadthis::download_file(
+                path = params$excel_files,
+                button_label = "Download All Excel File (ZIP)",
+                button_type = "default",
+                has_icon = TRUE,
+                icon = "fa fa-file-archive",
+                self_contained = TRUE
+                )
 ```
 
 # Quality Control {.tabset .tabset-fade}
 
-## Normalized Abundances
+## Normalized Abundances {.tabset .tabset-fade}
 
 This step is performed by the NormalyzerDE package (specialized for TMT data), and normalizes abundances between replicates. More details on how the function performs the normalization can be found in [NormalyzerDE](http://doi.org/10.1021/acs.jproteome.8b00523).
 
 Ideally, all boxplots have a similar distribution between replicates.
 
+### Input total proteome
 ```{r, fig.height=4, fig.width=8}
 print(params$results[["Quality Control"]]$plots[["InputNormalization"]])
 ```
 
+### diGly
 ```{r, fig.height=4, fig.width=8}
 print(params$results[["Quality Control"]]$plots[["diGlyNormalization"]])
 ```
@@ -61,10 +70,12 @@ print(params$results[["Quality Control"]]$plots[["diGlyNormalization"]])
 
 Ideally, all replicates from the same group should cluster together and have > 0.9 correlation coefficient. For proteomics data it is not unusual to consider > 0.8 as good correlation between replicates.
 
+### Input total proteome
 ```{r, fig.height=4, fig.width=4}
 print(params$results[["Quality Control"]]$plots[["InputCor"]])
 ```
 
+### diGly
 ```{r, fig.height=4, fig.width=4}
 print(params$results[["Quality Control"]]$plots[["diGlyCor"]])
 ```
