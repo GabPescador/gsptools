@@ -41,9 +41,9 @@ Descriptions of each sheet included in the document can be found in the first pa
 
 ```
 
-# Quality Control
+# Quality Control {.tabset .tabset-fade}
 
-## Normalized Abundances {.tabset .tabset-fade}
+## Normalized Abundances
 
 This step is performed by the NormalyzerDE package (specialized for TMT data), and normalizes abundances between replicates. More details on how the function performs the normalization can be found in [NormalyzerDE](http://doi.org/10.1021/acs.jproteome.8b00523).
 
@@ -57,7 +57,7 @@ print(params$results[["Quality Control"]]$plots[["InputNormalization"]])
 print(params$results[["Quality Control"]]$plots[["diGlyNormalization"]])
 ```
 
-## Correlation Plots {.tabset .tabset-fade}
+## Correlation Plots
 
 Ideally, all replicates from the same group should cluster together and have > 0.9 correlation coefficient. For proteomics data it is not unusual to consider > 0.8 as good correlation between replicates.
 
@@ -69,17 +69,17 @@ print(params$results[["Quality Control"]]$plots[["InputCor"]])
 print(params$results[["Quality Control"]]$plots[["diGlyCor"]])
 ```
 
-## PCA Plots {.tabset .tabset-fade}
+## PCA Plots
 
 Ideally, groups should cluster together. If there is technical variance you might see replicates clustering together instead, which represents a problem for downstream analyses.
 
 If that's the case, one might decide to get rid of a weird replicate. Alternatively, one might want to correct the bacth effect by applying something like [proBatch](https://www.embopress.org/doi/full/10.15252/msb.202110240).
 
-```{r, fig.height=4, fig.width=8}
+```{r, fig.width=ifelse(length(params$results[["Quality Control"]]$plots[["PCA"]]) > 2, 8, 8), fig.height=ifelse(length(params$results[["Quality Control"]]$plots[["PCA"]]) > 2, 8, 4)}
 print(params$results[["Quality Control"]]$plots[["PCA"]])
 ```
 
-# Data Visualization
+# Data Visualization {.tabset .tabset-fade}
 
 All comparative plots are based on the specified contrasts below, where groups are separated by "-", and comparisons are always interpreted as Group1/Group2. Positive foldchanges are related to proteins/sites that are upregulated in Group1 in comparison to Group2.
 
@@ -104,6 +104,7 @@ All comparative plots exclude unique modified sites/proteins since they cannot p
 
 Be mindful that the pipeline defines sites/proteins that are not found in at least 2 replicates as not expressed in the samples. Therefore, unique sites/proteins might come from things that were present in just one replicate rather than completely not present in a certain sample.
 
+### Input total proteome
 ```{r}
 DT::datatable(params$results[["Quality Control"]]$tables[["InputUnique"]],
     extensions = 'Buttons',
@@ -115,6 +116,7 @@ DT::datatable(params$results[["Quality Control"]]$tables[["InputUnique"]],
   )
 ```
 
+### diGly
 ```{r}
 DT::datatable(params$results[["Quality Control"]]$tables[["diGlyUnique"]],
     extensions = 'Buttons',
@@ -129,7 +131,7 @@ DT::datatable(params$results[["Quality Control"]]$tables[["diGlyUnique"]],
 ## Volcano Plots {.tabset .tabset-fade}
 
 ### Input total proteome
-```{r, fig.height=8, fig.width=8}
+```{r, fig.width=ifelse(length(params$results[["Visualization"]]$plots[["InputVolcanoPlots"]]) > 2, 8, 8), fig.height=ifelse(length(params$results[["Visualization"]]$plots[["InputVolcanoPlots"]]) > 2, 8, 4)}
 print(params$results[["Visualization"]]$plots[["InputVolcanoPlots"]])
 ```
 
@@ -145,7 +147,7 @@ DT::datatable(params$results[["Visualization"]]$tables[["InputSig"]],
 ```
 
 ### diGly
-```{r, fig.height=8, fig.width=8}
+```{r, fig.width=ifelse(length(params$results[["Visualization"]]$plots[["diGlyVolcanoPlots"]]) > 2, 8, 8), fig.height=ifelse(length(params$results[["Visualization"]]$plots[["diGlyVolcanoPlots"]]) > 2, 8, 4)}
 print(params$results[["Visualization"]]$plots[["diGlyVolcanoPlots"]])
 ```
 
@@ -160,13 +162,13 @@ DT::datatable(params$results[["Visualization"]]$tables[["diGlySig"]],
   )
 ```
 
-## Scatter Plots {.tabset .tabset-fade}
+## Scatter Plots
 
 One important aspect of diGly experiments is to compare fold changes of modified sites with total proteome fold changes. In cases where a protein is increasing or decreasing in expression, its modified sites might also increase/decrease just because they are following the protein trend, and not because our perturbation affected the modified site.
 
 Therefore, these scatter plots provide a more tailored list of candidates taking into account changes at the total proteome level.
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.width=ifelse(length(params$results[["Visualization"]]$plots[["ScatterPlots"]]) > 2, 8, 8), fig.height=ifelse(length(params$results[["Visualization"]]$plots[["ScatterPlots"]]) > 2, 8, 4)}
 print(params$results[["Visualization"]]$plots[["ScatterPlots"]])
 ```
 
@@ -181,7 +183,7 @@ DT::datatable(params$results[["Visualization"]]$tables[["ScatterSig"]],
   )
 ```
 
-# E3 Ubiquitin Ligase Analysis
+## E3 Ubiquitin Ligase Analysis
 
 This analysis assumes that if one E3 Ligase is active, all of its substrates should be affected in the diGly experiment. Therefore, we would expect increases in modified site of all known E3 substrates. The main caveat of this analysis is that it's biased for the known substrates of the E3 ligases, therefore it does not necessarily exclude E3 ligases that are not found as enriched in our datasets.
 
@@ -189,7 +191,7 @@ In summary, we calculate the ratios between one condition and the control (e.g.,
 
 As with all other comparative plots, these use the contrasts defined in the contrast table in the Data Visualization section.
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.width=ifelse(length(params$results[["E3 Ligase Analysis"]]$plots[["VolcanoPlots"]]) > 2, 8, 8), fig.height=ifelse(length(params$results[["E3 Ligase Analysis"]]$plots[["VolcanoPlots"]]) > 2, 8, 4)}
 print(params$results[["E3 Ligase Analysis"]]$plots[["VolcanoPlots"]])
 ```
 
