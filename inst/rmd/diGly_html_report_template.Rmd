@@ -38,13 +38,13 @@ This report uses as a base the PROT-XXXX_results.xlsx file, where all data is co
 Descriptions of each sheet included in the document can be found in the first page "Description" of the excel file.
 
 ```{r}
-downloadthis::download_file(path = params$excel_files,
-                            output_name = paste0(params$report_title, "_results"),
-                            button_label = "Download All Excel Files (ZIP)",
-                            button_type = "success",
-                            has_icon = TRUE,
-                            icon = "fa fa-download"
-                            )
+zip_file <- params$excel_files
+
+# Get just the filename
+file_name <- basename(zip_file)
+
+# Create download link
+cat(sprintf('<a href="%s" download>Download Results (ZIP)</a>', file_name))
 ```
 
 # Quality Control {.tabset .tabset-fade}
