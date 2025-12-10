@@ -465,7 +465,7 @@ reportTMTdiGly <- function(path,
   excel <- excel[!grepl("~\\$", excel)] # Get rid of temporary files that might be present
 
   zip_file <- here::here(path, "output", "report", paste0(jobname, "_results.zip"))
-  zip::zip(zip_file,
+  zip::zipr(zip_file,
            files = excel,
            mode = "cherry-pick")
 
@@ -490,8 +490,8 @@ reportTMTdiGly <- function(path,
     envir = new.env(parent = globalenv())
     )
 
-  print("########################################")
-  print(paste0("Done! HTML report saved to: ", normalizePath(outDir)))
-  print("########################################")
+  message("########################################")
+  message("Done! HTML report saved to: ", normalizePath(outDir))
+  message("########################################")
 
 }
