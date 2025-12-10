@@ -7,6 +7,7 @@ output:
     toc: true
     toc_float: true
     self_contained: true
+    keep_md: true
 params:
   results: NA
   report_title: NA
@@ -19,7 +20,11 @@ editor_options:
 knitr::opts_chunk$set(
   echo = FALSE,
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  error = FALSE,
+  ig.path = "figures/",
+  fig.keep = "all",
+  dev = "pdf"
 )
 ```
 
@@ -74,12 +79,12 @@ print(params$results[["Quality Control"]]$plots[["diGlyNormalization"]])
 Ideally, all replicates from the same group should cluster together and have > 0.9 correlation coefficient. For proteomics data it is not unusual to consider > 0.8 as good correlation between replicates.
 
 ### Input total proteome
-```{r, fig.height=4, fig.width=4}
+```{r, fig.height=4, fig.width=6}
 print(params$results[["Quality Control"]]$plots[["InputCor"]])
 ```
 
 ### diGly
-```{r, fig.height=4, fig.width=4}
+```{r, fig.height=4, fig.width=6}
 print(params$results[["Quality Control"]]$plots[["diGlyCor"]])
 ```
 
@@ -104,7 +109,10 @@ knitr::kable(params$results[["Quality Control"]]$tables[["Contrasts"]])
 
 DT::datatable(gsptools::biogenesisProteinOrder,
     extensions = 'Buttons',
-    caption = "Biogenesis Factors",
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "Biogenesis Factors"),
     options = list(
       dom = 'Bfrtip',
       buttons = c('csv', 'excel')
@@ -122,7 +130,10 @@ Be mindful that the pipeline defines sites/proteins that are not found in at lea
 ```{r}
 DT::datatable(params$results[["Quality Control"]]$tables[["InputUnique"]],
     extensions = 'Buttons',
-    caption = "Input Unique Proteins",
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "Input Unique Proteins"),
     options = list(
       dom = 'Bfrtip',
       buttons = c('csv', 'excel')
@@ -134,7 +145,10 @@ DT::datatable(params$results[["Quality Control"]]$tables[["InputUnique"]],
 ```{r}
 DT::datatable(params$results[["Quality Control"]]$tables[["diGlyUnique"]],
     extensions = 'Buttons',
-    caption = "diGly Unique Modified Sites",
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "diGly Unique Modified Sites"),
     options = list(
       dom = 'Bfrtip',
       buttons = c('csv', 'excel')
@@ -152,7 +166,10 @@ print(params$results[["Visualization"]]$plots[["InputVolcanoPlots"]])
 ```{r}
 DT::datatable(params$results[["Visualization"]]$tables[["InputSig"]],
     extensions = 'Buttons',
-    caption = "Input Sig Proteins",
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "Input Sig Proteins"),
     options = list(
       dom = 'Bfrtip',
       buttons = c('csv', 'excel')
@@ -168,7 +185,10 @@ print(params$results[["Visualization"]]$plots[["diGlyVolcanoPlots"]])
 ```{r}
 DT::datatable(params$results[["Visualization"]]$tables[["diGlySig"]],
     extensions = 'Buttons',
-    caption = "diGly Sig Proteins",
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "diGly Sig Proteins"),
     options = list(
       dom = 'Bfrtip',
       buttons = c('csv', 'excel')
@@ -189,7 +209,10 @@ print(params$results[["Visualization"]]$plots[["ScatterPlots"]])
 ```{r}
 DT::datatable(params$results[["Visualization"]]$tables[["ScatterSig"]],
     extensions = 'Buttons',
-    caption = "Scatter Sig Proteins",
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "Scatter Sig Proteins"),
     options = list(
       dom = 'Bfrtip',
       buttons = c('csv', 'excel')
@@ -212,7 +235,10 @@ print(params$results[["E3 Ligase Analysis"]]$plots[["VolcanoPlots"]])
 ```{r}
 DT::datatable(params$results[["E3 Ligase Analysis"]]$tables[["E3Sig"]],
     extensions = 'Buttons',
-    caption = "E3 Ligase Enrichment",
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "E3 Ligase Enrichment"),
     options = list(
       dom = 'Bfrtip',
       buttons = c('csv', 'excel')
