@@ -40,11 +40,15 @@ Descriptions of each sheet included in the document can be found in the first pa
 ```{r, results='asis'}
 zip_file <- params$excel_files
 
-# Get just the filename
-file_name <- basename(zip_file)
+# Read file and encode as base64
+encoded <- base64enc::base64encode(zip_file)
 
-# Create download link
-cat(sprintf('<a href="%s" download>Download Results (ZIP)</a>', file_name))
+# Create data URI
+file_name <- basename(zip_file)
+data_uri <- sprintf("data:application/zip;base64,%s", encoded)
+
+# Create download link with embedded data
+cat(sprintf('<a href="%s" download="%s" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">📦 Download Results (ZIP)</a>', data_uri, file_name))
 ```
 
 # Quality Control {.tabset .tabset-fade}
