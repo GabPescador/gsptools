@@ -38,12 +38,8 @@ This report uses as a base the PROT-XXXX_results.xlsx file, where all data is co
 Descriptions of each sheet included in the document can be found in the first page "Description" of the excel file.
 
 ```{r}
-# Create ZIP file
-zip_file <- paste0(params$report_title, "_results.zip")
-zip::zip(zip_file, files = params$excel_files, mode = "cherry-pick")
-
 # Offer for download
-cat(sprintf('<a href="%s" download class="btn btn-success">📥 Download All Files (ZIP)</a>', zip_file))
+cat(sprintf('<a href="%s" download class="btn btn-success">📥 Download All Files (ZIP)</a>', params$excel_files))
 ```
 
 # Quality Control {.tabset .tabset-fade}
