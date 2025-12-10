@@ -463,7 +463,7 @@ reportTMTdiGly <- function(path,
   template <- system.file("rmd", "diGly_html_report_template.Rmd", package = "gsptools")
   outDir <- paste0(path, "/output/report")
 
-  suppressMessages(
+  suppressMessages({
   rmarkdown::render(
     input = template,
     output_file = paste0(jobname, "_report.html"),
@@ -471,6 +471,8 @@ reportTMTdiGly <- function(path,
     params = list(results = results,
                   report_title = jobname),
     envir = new.env(parent = globalenv())
+    )
+  }
   )
 
   print("########################################")
