@@ -37,7 +37,7 @@ This report uses as a base the PROT-XXXX_results.xlsx file, where all data is co
 
 Descriptions of each sheet included in the document can be found in the first page "Description" of the excel file.
 
-```{r}
+```{r, results='asis'}
 zip_file <- params$excel_files
 
 # Get just the filename
