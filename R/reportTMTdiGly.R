@@ -132,7 +132,7 @@ reportTMTdiGly <- function(path,
   #extract the PCA scores for dim 1 and dim 2 so we can make our own plots.
   scores <- as.data.frame(data_filtered_pca$ind$coord) |>
     tibble::rownames_to_column(var = "Replicates") %>%
-    mutate(Group = str_remove(Replicates, "_[^_]*$"))
+    mutate(Group = stringr::str_remove(Replicates, "_[^_]*$"))
   dim1_score <- round(p1$data$eig[1], digits = 1)
   dim2_score <- round(p1$data$eig[2], digits = 1)
 
@@ -154,7 +154,7 @@ reportTMTdiGly <- function(path,
   #extract the PCA scores for dim 1 and dim 2 so we can make our own plots.
   scores <- as.data.frame(data_filtered_pca$ind$coord) |>
     tibble::rownames_to_column(var = "Replicates") %>%
-    mutate(Group = str_remove(Replicates, "_[^_]*$"))
+    mutate(Group = stringr::str_remove(Replicates, "_[^_]*$"))
   dim1_score <- round(p1$data$eig[1], digits = 1)
   dim2_score <- round(p1$data$eig[2], digits = 1)
 
@@ -232,7 +232,7 @@ reportTMTdiGly <- function(path,
       filter(contrast == i) %>%
       ggplot(aes(x=logFC, y=-log10(adj.P.Val), color = Color)) +
       geom_point() +
-      geom_label_repel(data = filter(inputFC,
+      ggrepel::geom_label_repel(data = filter(inputFC,
                                      contrast == i &
                                        Color == "#AA4499" &
                                        protein_id %in% c(ribosomeProteinsHs$protein_id,
@@ -278,7 +278,7 @@ reportTMTdiGly <- function(path,
       filter(contrast == i) %>%
       ggplot(aes(x=logFC, y=-log10(adj.P.Val), color = Color)) +
       geom_point() +
-      geom_label_repel(data = filter(diGlyFC,
+      ggrepel::geom_label_repel(data = filter(diGlyFC,
                                      contrast == i &
                                        Color == "#AA4499" &
                                        protein_id %in% c(ribosomeProteinsHs$protein_id,
@@ -332,7 +332,7 @@ reportTMTdiGly <- function(path,
       filter(contrast == i) %>%
       ggplot(aes(x=input_logFC, y=diGly_logFC, color = Color)) +
       geom_point() +
-      geom_label_repel(data = filter(df3,
+      ggrepel::geom_label_repel(data = filter(df3,
                                      contrast == i &
                                        Color == "#AA4499" &
                                        protein_id %in% c(ribosomeProteinsHs$protein_id,
@@ -375,7 +375,7 @@ reportTMTdiGly <- function(path,
     purrr::set_names(basename(.)) %>%
     purrr::map(data.table::fread) %>%
     bind_rows(.id = "filename") %>%
-    mutate(contrast = str_extract(filename, "(?<=grouped_)[A-Za-z0-9]+")) %>%
+    mutate(contrast = stringr::str_extract(filename, "(?<=grouped_)[A-Za-z0-9]+")) %>%
     mutate(Sig = ifelse(abs(site_avg) >= 0.5 & p_value <= 0.05,
                         "Significant",
                         "Non-Significant")) %>%
@@ -463,7 +463,6 @@ reportTMTdiGly <- function(path,
   template <- system.file("rmd", "diGly_html_report_template.Rmd", package = "gsptools")
   outDir <- paste0(path, "/output/report")
 
-  suppressMessages({
   rmarkdown::render(
     input = template,
     output_file = paste0(jobname, "_report.html"),
@@ -472,8 +471,6 @@ reportTMTdiGly <- function(path,
                   report_title = jobname),
     envir = new.env(parent = globalenv())
     )
-  }
-  )
 
   print("########################################")
   print("Done! HTML report saved to: ", normalizePath(outDir))
