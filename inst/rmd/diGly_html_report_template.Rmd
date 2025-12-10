@@ -38,8 +38,13 @@ This report uses as a base the PROT-XXXX_results.xlsx file, where all data is co
 Descriptions of each sheet included in the document can be found in the first page "Description" of the excel file.
 
 ```{r}
-# Offer for download
-cat(sprintf('<a href="%s" download class="btn btn-success">📥 Download All Files (ZIP)</a>', params$excel_files))
+downloadthis::download_file(path = params$excel_files,
+                            output_name = paste0(params$report_title, "_results"),
+                            button_label = "Download All Excel Files (ZIP)",
+                            button_type = "success",
+                            has_icon = TRUE,
+                            icon = "fa fa-download"
+                            )
 ```
 
 # Quality Control {.tabset .tabset-fade}
@@ -60,7 +65,7 @@ print(params$results[["Quality Control"]]$plots[["InputNormalization"]])
 print(params$results[["Quality Control"]]$plots[["diGlyNormalization"]])
 ```
 
-## Correlation Plots
+## Correlation Plots {.tabset .tabset-fade}
 
 Ideally, all replicates from the same group should cluster together and have > 0.9 correlation coefficient. For proteomics data it is not unusual to consider > 0.8 as good correlation between replicates.
 
