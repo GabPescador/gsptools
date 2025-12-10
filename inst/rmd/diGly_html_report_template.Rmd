@@ -38,21 +38,12 @@ This report uses as a base the PROT-XXXX_results.xlsx file, where all data is co
 Descriptions of each sheet included in the document can be found in the first page "Description" of the excel file.
 
 ```{r}
-# Create temp directory
-temp_dir <- tempdir()
-# Copy all files to temp directory
-temp_paths <- file.path(temp_dir, basename(params$excel_files))
-file.copy(params$excel_files, temp_paths, overwrite = TRUE)
+# Create ZIP file
+zip_file <- paste0(params$report_title, "_results.zip")
+zip::zip(zip_file, files = params$excel_files, mode = "cherry-pick")
 
-downloadthis::download_file(
-                path = temp_paths,
-                output_name = paste0(params$report_title, "_results"),
-                button_label = "Download All Excel Files (ZIP)",
-                button_type = "primary",
-                has_icon = TRUE,
-                icon = "fa fa-file-archive",
-                self_contained = TRUE
-                )
+# Offer for download
+cat(sprintf('<a href="%s" download class="btn btn-success">📥 Download All Files (ZIP)</a>', zip_file))
 ```
 
 # Quality Control {.tabset .tabset-fade}
