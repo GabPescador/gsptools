@@ -1,7 +1,12 @@
 ---
 title: "`r paste0(params$report_title, ' TMT diGly Report')`"
 author: da Silva Pescador, G
-output: html_document
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    self_contained: true
 params:
   results: NA
   report_title: NA
@@ -38,39 +43,39 @@ Descriptions of each sheet included in the document can be found in the first pa
 
 # Quality Control
 
-## Normalized Abundances
+## Normalized Abundances {.tabset .tabset-fade}
 
 This step is performed by the NormalyzerDE package (specialized for TMT data), and normalizes abundances between replicates. More details on how the function performs the normalization can be found in [NormalyzerDE](http://doi.org/10.1021/acs.jproteome.8b00523).
 
 Ideally, all boxplots have a similar distribution between replicates.
 
-```{r, fig.height=11, fig.width=8}
+```{r, fig.height=4, fig.width=8}
 print(params$results[["Quality Control"]]$plots[["InputNormalization"]])
 ```
 
-```{r, fig.height=11, fig.width=8}
+```{r, fig.height=4, fig.width=8}
 print(params$results[["Quality Control"]]$plots[["diGlyNormalization"]])
 ```
 
-## Correlation Plots
+## Correlation Plots {.tabset .tabset-fade}
 
 Ideally, all replicates from the same group should cluster together and have > 0.9 correlation coefficient. For proteomics data it is not unusual to consider > 0.8 as good correlation between replicates.
 
-```{r, fig.height=11, fig.width=8}
+```{r, fig.height=4, fig.width=4}
 print(params$results[["Quality Control"]]$plots[["InputCor"]])
 ```
 
-```{r, fig.height=11, fig.width=8}
+```{r, fig.height=4, fig.width=4}
 print(params$results[["Quality Control"]]$plots[["diGlyCor"]])
 ```
 
-## PCA Plots
+## PCA Plots {.tabset .tabset-fade}
 
 Ideally, groups should cluster together. If there is technical variance you might see replicates clustering together instead, which represents a problem for downstream analyses.
 
 If that's the case, one might decide to get rid of a weird replicate. Alternatively, one might want to correct the bacth effect by applying something like [proBatch](https://www.embopress.org/doi/full/10.15252/msb.202110240).
 
-```{r, fig.height=11, fig.width=8}
+```{r, fig.height=4, fig.width=8}
 print(params$results[["Quality Control"]]$plots[["PCA"]])
 ```
 
@@ -93,7 +98,7 @@ DT::datatable(gsptools::biogenesisProteinOrder,
   )
 ```
 
-## Unique modified sites/proteins
+## Unique modified sites/proteins {.tabset .tabset-fade}
 
 All comparative plots exclude unique modified sites/proteins since they cannot perform statistics on things that are present in one sample but not in another. These are still interesting candidates and are summarized in the list below.
 
@@ -121,10 +126,10 @@ DT::datatable(params$results[["Quality Control"]]$tables[["diGlyUnique"]],
   )
 ```
 
-## Volcano Plots
+## Volcano Plots {.tabset .tabset-fade}
 
 ### Input total proteome
-```{r, fig.height=11, fig.width=8}
+```{r, fig.height=8, fig.width=8}
 print(params$results[["Visualization"]]$plots[["InputVolcanoPlots"]])
 ```
 
@@ -140,7 +145,7 @@ DT::datatable(params$results[["Visualization"]]$tables[["InputSig"]],
 ```
 
 ### diGly
-```{r, fig.height=11, fig.width=8}
+```{r, fig.height=8, fig.width=8}
 print(params$results[["Visualization"]]$plots[["diGlyVolcanoPlots"]])
 ```
 
@@ -155,13 +160,13 @@ DT::datatable(params$results[["Visualization"]]$tables[["diGlySig"]],
   )
 ```
 
-## Scatter Plots
+## Scatter Plots {.tabset .tabset-fade}
 
 One important aspect of diGly experiments is to compare fold changes of modified sites with total proteome fold changes. In cases where a protein is increasing or decreasing in expression, its modified sites might also increase/decrease just because they are following the protein trend, and not because our perturbation affected the modified site.
 
 Therefore, these scatter plots provide a more tailored list of candidates taking into account changes at the total proteome level.
 
-```{r, fig.height=11, fig.width=8}
+```{r, fig.height=8, fig.width=8}
 print(params$results[["Visualization"]]$plots[["ScatterPlots"]])
 ```
 
@@ -184,7 +189,7 @@ In summary, we calculate the ratios between one condition and the control (e.g.,
 
 As with all other comparative plots, these use the contrasts defined in the contrast table in the Data Visualization section.
 
-```{r, fig.height=11, fig.width=8}
+```{r, fig.height=8, fig.width=8}
 print(params$results[["E3 Ligase Analysis"]]$plots[["VolcanoPlots"]])
 ```
 
