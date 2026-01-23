@@ -2,6 +2,8 @@
 
 export(DigestBatch)
 export(SlopeCalc)
+export(TMTlabelEfficiency)
+export(diannQCreport)
 export(fastaTransform)
 export(fromList)
 export(getGeneNames_KEGG)
