@@ -61,8 +61,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   }
   # Create output directories in case they don't exist
   paths <- c(
-    file.path(outputPath, "output", "plots"),
-    file.path(outputPath, "output", "tables")
+    file.path(outputPath, "plots"),
+    file.path(outputPath, "tables")
   )
   invisible(sapply(paths, dir.create, recursive = TRUE, showWarnings = FALSE))
 
@@ -127,7 +127,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
 
   # After normalization
   p2 <- diGly %>%
-    reshape2::melt(id.vars = colnames(diGly)[1:7]) %>%
+    reshape2::melt(id.vars = colnames(diGly)[1:8]) %>%
     ggplot2::ggplot(aes(x=.data$variable, y=.data$value)) +
     ggplot2::geom_boxplot() +
     ggplot2::theme_minimal() +
@@ -137,7 +137,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     ggplot2::ggtitle("After Normalization")
 
     # Plots together
-    grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_diGly_normalization_boxplot.pdf")))
+    grDevices::pdf(here::here(outputPath, "plots", paste0(jobname, "_diGly_normalization_boxplot.pdf")))
     print(cowplot::plot_grid(p1, p2, ncol = 2))
     grDevices::dev.off()
 
@@ -172,7 +172,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       ggplot2::ggtitle("After Normalization")
 
     # Plots together
-    grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_input_normalization_boxplot.pdf")))
+    grDevices::pdf(here::here(outputPath, "plots", paste0(jobname, "_input_normalization_boxplot.pdf")))
     print(cowplot::plot_grid(p1, p2, ncol = 2))
     grDevices::dev.off()
 
@@ -183,14 +183,14 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     diGly_long <- diGly %>%
       reshape2::melt(id.vars = colnames(.)[1:8]) %>%
       # select(protein_id, variable, value) %>%
-      merge(., metadata[,-3], by.x = "variable", by.y = "sample")
+      base::merge(., metadata[,-3], by.x = "variable", by.y = "sample")
 
     diGly_filtered <- diGly_long %>%
       filter(!is.na(value)) %>%
       group_by(modified_site, group) %>%
       summarize(counts =n())
 
-    diGly_long <- merge(diGly_long, diGly_filtered, by = c("modified_site", "group"))
+    diGly_long <- base::merge(diGly_long, diGly_filtered, by = c("modified_site", "group"))
 
     diGly_long <- diGly_long %>%
       mutate(value = if_else(counts < 2, NA_real_, value))
@@ -207,14 +207,14 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     input_long <- input %>%
       reshape2::melt(id.vars = colnames(.)[1:3]) %>%
       # select(protein_id, variable, value) %>%
-      merge(., metadata[,-3], by.x = "variable", by.y = "sample")
+      base::merge(., metadata[,-3], by.x = "variable", by.y = "sample")
 
     input_filtered <- input_long %>%
       filter(!is.na(value)) %>%
       group_by(protein_id, group) %>%
       summarize(counts =n())
 
-    input_long <- merge(input_long, input_filtered, by = c("protein_id", "group"))
+    input_long <- base::merge(input_long, input_filtered, by = c("protein_id", "group"))
 
     input_long <- input_long %>%
       mutate(value = if_else(counts < 2, NA_real_, value))
@@ -235,28 +235,28 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   uniquePerGroup_diGly <- diGly %>%
     reshape2::melt(id.vars = colnames(.)[1:8]) %>%
     select(modified_site, protein_id, variable, value) %>%
-    merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
+    base::merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
     filter(!is.na(value)) %>%
     group_by(modified_site) %>%
     filter(n_distinct(group) == 1) %>%
     ungroup() %>%
     distinct(modified_site, group)
 
-  uniquePerGroup_diGly <- merge(uniquePerGroup_diGly, diGly[,c("modified_site", "protein_id", "protein_name")]) %>%
+  uniquePerGroup_diGly <- base::merge(uniquePerGroup_diGly, diGly[,c("modified_site", "protein_id", "protein_name")]) %>%
     relocate(protein_name, .before = group)
 
   # input
   uniquePerGroup_input <- input %>%
     reshape2::melt(id.vars = colnames(.)[1:3]) %>%
     select(protein_id, variable, value) %>%
-    merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
+    base::merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
     filter(!is.na(value)) %>%
     group_by(protein_id) %>%
     filter(n_distinct(group) == 1) %>%
     ungroup() %>%
     distinct(protein_id, group)
 
-  uniquePerGroup_input <- merge(uniquePerGroup_input, input[,c("protein_id", "protein_name")]) %>%
+  uniquePerGroup_input <- base::merge(uniquePerGroup_input, input[,c("protein_id", "protein_name")]) %>%
     relocate(protein_name, .before = group)
 
   } else {
@@ -265,7 +265,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     uniquePerGroup_diGly <- diGly %>%
       reshape2::melt(id.vars = colnames(.)[1:8]) %>%
       select(modified_site, protein_id, variable, value) %>%
-      merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
+      base::merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
       filter(!is.na(value)) %>%
       group_by(modified_site) %>%
       filter(n_distinct(group) == 1) %>%
@@ -276,7 +276,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     uniquePerType_diGly <- diGly %>%
       reshape2::melt(id.vars = colnames(.)[1:8]) %>%
       select(modified_site, protein_id, variable, value) %>%
-      merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
+      base::merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
       filter(!is.na(value)) %>%
       group_by(modified_site) %>%
       filter(n_distinct(type) == 1) %>%
@@ -285,14 +285,14 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       rename("group" = "type")
 
     uniquePerGroup_diGly <- rbind(uniquePerGroup_diGly, uniquePerType_diGly)
-    uniquePerGroup_diGly <- merge(uniquePerGroup_diGly, diGly[,c("modified_site", "protein_id", "protein_name")]) %>%
+    uniquePerGroup_diGly <- base::merge(uniquePerGroup_diGly, diGly[,c("modified_site", "protein_id", "protein_name")]) %>%
       relocate(protein_name, .before = group)
 
     # input
     uniquePerGroup_input <- input %>%
       reshape2::melt(id.vars = colnames(.)[1:3]) %>%
       select(protein_id, variable, value) %>%
-      merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
+      base::merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
       filter(!is.na(value)) %>%
       group_by(protein_id) %>%
       filter(n_distinct(group) == 1) %>%
@@ -303,7 +303,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     uniquePerType_input <- input %>%
       reshape2::melt(id.vars = colnames(.)[1:3]) %>%
       select(protein_id, variable, value) %>%
-      merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
+      base::merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
       filter(!is.na(value)) %>%
       group_by(protein_id) %>%
       filter(n_distinct(type) == 1) %>%
@@ -312,7 +312,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       rename("group" = "type")
 
     uniquePerGroup_input <- rbind(uniquePerGroup_input, uniquePerType_input)
-    uniquePerGroup_input <- merge(uniquePerGroup_input, input[,c("protein_id", "protein_name")]) %>%
+    uniquePerGroup_input <- base::merge(uniquePerGroup_input, input[,c("protein_id", "protein_name")]) %>%
       relocate(protein_name, .before = group)
   }
 
@@ -376,7 +376,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   fit2 <- limma::contrasts.fit(fit, contrast.matrix)
   fit2 <- limma::eBayes(fit2)
 
-  grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_diGly_limma_mds-plot.pdf")))
+  grDevices::pdf(here::here(outputPath, "plots", paste0(jobname, "_diGly_limma_mds-plot.pdf")))
   limma::plotMDS(matrix_diGly)
   grDevices::dev.off()
 
@@ -393,7 +393,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   }
 
   # Putting protein names back
-  df_diGly <- merge(df, diGly[,c(1,2,3)], by = "modified_site") %>%
+  df_diGly <- base::merge(df, diGly[,c(1,2,3)], by = "modified_site") %>%
     relocate(protein_name, .after = modified_site) %>%
     relocate(protein_id, .before = protein_name) %>%
     mutate(protein_name = toupper(protein_name)) %>%
@@ -424,7 +424,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     fit2 <- limma::eBayes(fit2)
 
 
-    grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_input_limma_mds-plot.pdf")))
+    grDevices::pdf(here::here(outputPath, "plots", paste0(jobname, "_input_limma_mds-plot.pdf")))
     limma::plotMDS(matrix_input)
     grDevices::dev.off()
 
@@ -442,7 +442,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     }
 
     # Putting protein names back
-    df_input <- merge(df, input[,c(1,2)], by = "protein_id") %>%
+    df_input <- base::merge(df, input[,c(1,2)], by = "protein_id") %>%
       relocate(protein_name, .after = protein_id) %>%
       mutate(protein_name = toupper(protein_name))
 
@@ -531,38 +531,73 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     if(proteinInput == TRUE){
       #input
       writexl::write_xlsx(x = sheets_input,
-                          path = here::here(outputPath, "output", "tables", paste0(jobname, "_input_results.xlsx")),
+                          path = here::here(outputPath, "tables", paste0(jobname, "_input_results.xlsx")),
                           format_headers = FALSE)
 
       for(i in names(sheets_input)) {
       readr::write_csv(x = sheets_input[[i]],
-                       file = here::here(outputPath, "output", "tables", paste0(jobname, "_input_", i, ".csv")))
+                       file = here::here(outputPath, "tables", paste0(jobname, "_input_", i, ".csv")))
       }
 
       #diGly
       writexl::write_xlsx(x = sheets_diGly,
-                          path = here::here(outputPath, "output", "tables", paste0(jobname, "_diGly_results.xlsx")),
+                          path = here::here(outputPath, "tables", paste0(jobname, "_diGly_results.xlsx")),
                           format_headers = FALSE)
 
       for(i in names(sheets_diGly)) {
         readr::write_csv(x = sheets_diGly[[i]],
-                         file = here::here(outputPath, "output", "tables", paste0(jobname, "_diGly_", i, ".csv")))
+                         file = here::here(outputPath, "tables", paste0(jobname, "_diGly_", i, ".csv")))
       }
 
     } else {
       writexl::write_xlsx(x = sheets_diGly,
-                          path = here::here(outputPath, "output", "tables", paste0(jobname, "_diGly_results.xlsx")),
+                          path = here::here(outputPath, "tables", paste0(jobname, "_diGly_results.xlsx")),
                           format_headers = FALSE)
 
       for(i in names(sheets_diGly)) {
         readr::write_csv(x = sheets_diGly[[i]],
-                         file = here::here(outputPath, "output", "tables", paste0(jobname, "_diGly_", i, ".csv")))
+                         file = here::here(outputPath, "tables", paste0(jobname, "_diGly_", i, ".csv")))
       }
     }
-  } else if (file.exists(here::here(outputPath, "output", "tables", paste0(jobname, "_diGly_results.xlsx")))) {
+  } else if (force == FALSE & file.exists(here::here(outputPath, "tables", paste0(jobname, "_diGly_results.xlsx")))) {
 
     print(paste0("Contrasts already performed and can be found in ",
-                 here::here(outputPath, "output", "tables", paste0(jobname, "_diGly_results.xlsx"))))
+                 here::here(outputPath, "tables", paste0(jobname, "_diGly_results.xlsx"))))
+
+    } else if (force == FALSE & !file.exists(here::here(outputPath, "tables", paste0(jobname, "_diGly_results.xlsx")))) {
+      if(proteinInput == TRUE){
+      #input
+      writexl::write_xlsx(x = sheets_input,
+                          path = here::here(outputPath, "tables", paste0(jobname, "_input_results.xlsx")),
+                          format_headers = FALSE)
+
+      for(i in names(sheets_input)) {
+      readr::write_csv(x = sheets_input[[i]],
+                       file = here::here(outputPath, "tables", paste0(jobname, "_input_", i, ".csv")))
+      }
+
+      #diGly
+      writexl::write_xlsx(x = sheets_diGly,
+                          path = here::here(outputPath, "tables", paste0(jobname, "_diGly_results.xlsx")),
+                          format_headers = FALSE)
+
+      for(i in names(sheets_diGly)) {
+        readr::write_csv(x = sheets_diGly[[i]],
+                         file = here::here(outputPath, "tables", paste0(jobname, "_diGly_", i, ".csv")))
+      }
+
+      } else {
+        writexl::write_xlsx(x = sheets_diGly,
+                            path = here::here(outputPath, "tables", paste0(jobname, "_diGly_results.xlsx")),
+                            format_headers = FALSE)
+
+        for(i in names(sheets_diGly)) {
+          readr::write_csv(x = sheets_diGly[[i]],
+                          file = here::here(outputPath, "tables", paste0(jobname, "_diGly_", i, ".csv")))
+        }
+      }
 
     }
+
 }
+
