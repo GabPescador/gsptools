@@ -109,13 +109,15 @@ limmaFragpipeTMT <- function(inputPath,
            "ProteinName" = "Gene",
            # "EntryID" = "Protein ID"
            ) %>%
+    select(-`Protein ID`) %>%
     mutate(ProteinName = tolower(ProteinName)) %>%
     filter(!stringr::str_detect(.data$ProteinID, "Cont")) %>%
     filter(!stringr::str_detect(.data$ProteinID, "rev")) %>%
     setNames(snakecase::to_snake_case(names(.)))
 
   p1 <- tmt %>%
-    reshape2::melt(id.vars = colnames(tmt)[1:5]) %>%
+    select(protein_id, protein_name, reference_intensity:last_col(), -reference_intensity) %>%
+    reshape2::melt(id.vars = colnames(.)[1:2]) %>%
     ggplot(aes(x=.data$variable, y=.data$value)) +
     geom_boxplot() +
     theme_minimal() +
@@ -278,8 +280,8 @@ limmaFragpipeTMT <- function(inputPath,
   fit2 <- limma::contrasts.fit(fit, contrast.matrix)
   fit2 <- limma::eBayes(fit2)
 
-  grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "limma_mds-plot.pdf")))
-  limma::plotMDS(fit)
+  grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_limma_mds-plot.pdf")))
+  limma::plotMDS(matrix_norm)
   grDevices::dev.off()
 
   # Saving contrasts
