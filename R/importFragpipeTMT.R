@@ -28,9 +28,9 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
 
   # Create output directories in case they don't exist
       paths <- c(
-        file.path(outputPath, "output", "plots"),
-        file.path(outputPath, "output", "tables"),
-        file.path(outputPath, "output", "normalyzerDE")
+        file.path(outputPath, "plots"),
+        file.path(outputPath, "tables"),
+        file.path(outputPath, "normalyzerDE")
             )
       invisible(sapply(paths, dir.create, recursive = TRUE, showWarnings = FALSE))
 
@@ -40,6 +40,7 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
                     "ProteinName" = "Gene",
                     # "EntryID" = "Protein ID"
                     ) %>%
+        select(-`Protein ID`) %>%
         mutate(ProteinName = tolower(ProteinName)) %>%
         filter(!str_detect(ProteinID, "Cont")) %>%
         filter(!str_detect(ProteinID, "rev")) %>%
@@ -51,7 +52,7 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
       matrix <- tmt %>%
         select(protein_id, reference_intensity:last_col(), -reference_intensity) %>%
         as.data.frame() %>%
-        column_to_rownames("protein_id") %>%
+        tibble::column_to_rownames("protein_id") %>%
         as.matrix()
 
   ### Design table
@@ -80,7 +81,7 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
           #designPath = NULL,
           #dataPath = NULL,
           experimentObj = se,
-          outputDir = here(outputPath, "output", "normalyzerDE"),
+          outputDir = here(outputPath, "normalyzerDE"),
           forceAllMethods = FALSE,
           omitLowAbundSamples = FALSE,
           #sampleAbundThres = 0,
@@ -103,10 +104,10 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
           #rtWindowMergeMethod = "mean"
         )
 
-      } else if (dir.exists(here(outputPath, "output", "normalyzerDE", jobname))) { # simpler way to check directory already exists
+      } else if (dir.exists(here(outputPath, "normalyzerDE", jobname))) { # simpler way to check directory already exists
 
         print(paste0("Normalization already performed and can be found in ",
-                     here(outputPath, "output", "normalyzerDE", jobname)))
+                     here(outputPath, "normalyzerDE", jobname)))
 
       } else {
         print("Running NormalizerDE...")
@@ -116,7 +117,7 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
           #designPath = NULL,
           #dataPath = NULL,
           experimentObj = se,
-          outputDir = here(outputPath, "output", "normalyzerDE"),
+          outputDir = here(outputPath, "normalyzerDE"),
           forceAllMethods = FALSE,
           omitLowAbundSamples = FALSE,
           #sampleAbundThres = 0,

@@ -1,0 +1,154 @@
+---
+title: "`r paste0(params$report_title, ' TMT diGly Report')`"
+author: da Silva Pescador, G
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    self_contained: true
+    keep_md: true
+params:
+  results: NA
+  report_title: NA
+  excel_files: NA
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  error = FALSE,
+  ig.path = "figures/",
+  fig.keep = "all",
+  dev = c("png", "pdf")
+)
+```
+
+# Introduction
+
+This report was created to facilitate visualization of proteomics experiments performed at the Kostova Lab.
+
+Specifically, this report will go over standard quality control plots (PCA, correlation, boxplots) and result plots for diGly TMT experiments.
+
+This will function as an intermediate step while I slowly build a ShinnyApp for users to explore the data interactively.
+
+# Result files
+
+This report uses as a base the PROT-XXXX_results.xlsx file, where all data is compiled after analysis and can be downloaded below. XXXX will be the LIMS number related to your proteomics project submitted.
+
+Descriptions of each sheet included in the document can be found in the first page "Description" of the excel file.
+
+```{r, results='asis'}
+zip_file <- params$excel_files
+
+# Read file and encode as base64
+encoded <- base64enc::base64encode(zip_file)
+
+# Create data URI
+file_name <- basename(zip_file)
+data_uri <- sprintf("data:application/zip;base64,%s", encoded)
+
+# Create download link with embedded data
+cat(sprintf('<a href="%s" download="%s" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">📦 Download Results (ZIP)</a>', data_uri, file_name))
+```
+
+# Quality Control {.tabset .tabset-fade}
+
+## Normalized Abundances {.tabset .tabset-fade}
+
+This step is performed by the NormalyzerDE package (specialized for TMT data), and normalizes abundances between replicates. More details on how the function performs the normalization can be found in [NormalyzerDE](http://doi.org/10.1021/acs.jproteome.8b00523).
+
+Ideally, all boxplots have a similar distribution between replicates.
+
+```{r, fig.height=4, fig.width=8}
+print(params$results[["Quality Control"]]$plots[["Normalization"]])
+```
+
+## Correlation Plots {.tabset .tabset-fade}
+
+Ideally, all replicates from the same group should cluster together and have > 0.9 correlation coefficient. For proteomics data it is not unusual to consider > 0.8 as good correlation between replicates.
+
+```{r, fig.height=4, fig.width=6}
+print(params$results[["Quality Control"]]$plots[["Cor"]])
+```
+
+## PCA Plots
+
+Ideally, groups should cluster together. If there is technical variance you might see replicates clustering together instead, which represents a problem for downstream analyses.
+
+If that's the case, one might decide to get rid of a weird replicate. Alternatively, one might want to correct the bacth effect by applying something like [proBatch](https://www.embopress.org/doi/full/10.15252/msb.202110240).
+
+```{r, fig.width=ifelse(length(params$results[["Quality Control"]]$plots[["PCA"]]) > 2, 8, 8), fig.height=ifelse(length(params$results[["Quality Control"]]$plots[["PCA"]]) > 2, 8, 4)}
+print(params$results[["Quality Control"]]$plots[["PCA"]])
+```
+
+# Data Visualization {.tabset .tabset-fade}
+
+All comparative plots are based on the specified contrasts below, where groups are separated by "-", and comparisons are always interpreted as Group1/Group2. Positive foldchanges are related to proteins/sites that are upregulated in Group1 in comparison to Group2.
+
+In addition, all plots are highlighted for ribosome proteins and biogenesis factors, based on [this paper](https://doi.org/10.15252/embj.2022112699). The list with details on each protein function can be downloaded below.
+
+```{r}
+knitr::kable(params$results[["Quality Control"]]$tables[["Contrasts"]])
+
+DT::datatable(gsptools::biogenesisProteinOrder,
+    extensions = 'Buttons',
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "Biogenesis Factors"),
+    options = list(
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel')
+    )
+  )
+```
+
+## Unique modified sites/proteins {.tabset .tabset-fade}
+
+All comparative plots exclude unique modified sites/proteins since they cannot perform statistics on things that are present in one sample but not in another. These are still interesting candidates and are summarized in the list below.
+
+Be mindful that the pipeline defines sites/proteins that are not found in at least 2 replicates as not expressed in the samples. Therefore, unique sites/proteins might come from things that were present in just one replicate rather than completely not present in a certain sample.
+
+```{r}
+DT::datatable(params$results[["Quality Control"]]$tables[["Unique"]],
+    extensions = 'Buttons',
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "Input Unique Proteins"),
+    options = list(
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel')
+    )
+  )
+```
+
+## Volcano Plots {.tabset .tabset-fade}
+
+```{r, fig.width=ifelse(length(params$results[["Visualization"]]$plots[["VolcanoPlots"]]) > 2, 8, 8), fig.height=ifelse(length(params$results[["Visualization"]]$plots[["VolcanoPlots"]]) > 2, 8, 4)}
+print(params$results[["Visualization"]]$plots[["VolcanoPlots"]])
+```
+
+```{r}
+DT::datatable(params$results[["Visualization"]]$tables[["Sig"]],
+    extensions = 'Buttons',
+    caption = htmltools::tags$caption(
+    style = 'font-size: 20px;
+             font-weight: bold;',
+    "Input Sig Proteins"),
+    options = list(
+      dom = 'Bfrtip',
+      buttons = c('csv', 'excel')
+    )
+  )
+```
+
+# System Info
+```{r}
+sessionInfo()
+```
