@@ -9,7 +9,7 @@
 #' @export
 
 reportTMT <- function(path,
-                           jobname){
+                      jobname){
 
   ########################################
   #        Quality Control Plots         #
@@ -127,7 +127,7 @@ reportTMT <- function(path,
     Sys.glob(
       paste0(
         path,
-        "output/tables/*_UniqueSites.csv"
+        "output/tables/*_UniqueProteins.csv"
       )
     )[which.max(file.info(Sys.glob(paste0(path, "output/tables/*_UniqueProteins.csv")))$mtime)])
 
@@ -224,6 +224,16 @@ reportTMT <- function(path,
   )
   excel <- excel[!grepl("~\\$", excel)] # Get rid of temporary files that might be present
 
+  # if (!dir.exists(paste0(path, "output/report"))) {
+  #   dir.create(paste0(path, "output/report"))
+  # }
+
+  paths <- c(
+    file.path(path, "output", "report")
+  )
+  invisible(sapply(paths, dir.create, recursive = TRUE, showWarnings = FALSE))
+
+
   zip_file <- here::here(path, "output", "report", paste0(jobname, "_results.zip"))
   zip::zipr(zip_file,
            files = excel,
@@ -232,10 +242,6 @@ reportTMT <- function(path,
   ########################################
   #          Render HTML Report          #
   ########################################
-
-  if (!dir.exists(paste0(path, "output/report"))) {
-    dir.create(paste0(path, "output/report"))
-  }
 
   template <- system.file("rmd", "TMT_html_report_template.Rmd", package = "gsptools")
   outDir <- paste0(path, "output/report")

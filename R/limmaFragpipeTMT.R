@@ -41,45 +41,45 @@ limmaFragpipeTMT <- function(inputPath,
 
   # Create output directories in case they don't exist
   paths <- c(
-    file.path(outputPath, "output", "plots"),
-    file.path(outputPath, "output", "tables"),
-    file.path(outputPath, "output", "normalyzerDE")
+    file.path(outputPath, "plots"),
+    file.path(outputPath, "tables"),
+    file.path(outputPath, "normalyzerDE")
   )
   invisible(sapply(paths, dir.create, recursive = TRUE, showWarnings = FALSE))
 
   if (method == "cycloess") {
 
-    norm <- data.table::fread(here::here(outputPath, "output", "normalyzerDE", jobname, "CycLoess-normalized.txt")) %>%
+    norm <- data.table::fread(here::here(outputPath, "normalyzerDE", jobname, "CycLoess-normalized.txt")) %>%
       setNames(snakecase::to_snake_case(names(.)))
 
   } else if (method == "gi") {
 
-    norm <- data.table::fread(here::here(outputPath, "output", "normalyzerDE", jobname, "GI-normalized.txt")) %>%
+    norm <- data.table::fread(here::here(outputPath, "normalyzerDE", jobname, "GI-normalized.txt")) %>%
       setNames(snakecase::to_snake_case(names(.)))
 
   } else if (method == "log2") {
 
-    norm <- data.table::fread(here::here(outputPath, "output", "normalyzerDE", jobname, "log2-normalized.txt")) %>%
+    norm <- data.table::fread(here::here(outputPath, "normalyzerDE", jobname, "log2-normalized.txt")) %>%
       setNames(snakecase::to_snake_case(names(.)))
 
   } else if (method == "mean") {
 
-    norm <- data.table::fread(here::here(outputPath, "output", "normalyzerDE", jobname, "mean-normalized.txt")) %>%
+    norm <- data.table::fread(here::here(outputPath, "normalyzerDE", jobname, "mean-normalized.txt")) %>%
       setNames(snakecase::to_snake_case(names(.)))
 
   } else if (method == "median") {
 
-    norm <- data.table::fread(here::here(outputPath, "output", "normalyzerDE", jobname, "median-normalized.txt")) %>%
+    norm <- data.table::fread(here::here(outputPath, "normalyzerDE", jobname, "median-normalized.txt")) %>%
       setNames(snakecase::to_snake_case(names(.)))
 
   } else if (method == "quantile") {
 
-    norm <- data.table::fread(here::here(outputPath, "output", "normalyzerDE", jobname, "Quantile-normalized.txt")) %>%
+    norm <- data.table::fread(here::here(outputPath, "normalyzerDE", jobname, "Quantile-normalized.txt")) %>%
       setNames(snakecase::to_snake_case(names(.)))
 
   } else if (method == "rlr") {
 
-    norm <- data.table::fread(here::here(outputPath, "output", "normalyzerDE", jobname, "RLR-normalized.txt")) %>%
+    norm <- data.table::fread(here::here(outputPath, "normalyzerDE", jobname, "RLR-normalized.txt")) %>%
       setNames(snakecase::to_snake_case(names(.)))
 
   }
@@ -138,7 +138,7 @@ limmaFragpipeTMT <- function(inputPath,
     ggtitle("After Normalization")
 
   # Plots together
-  grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_normalization_boxplot.pdf")))
+  grDevices::pdf(here::here(outputPath, "plots", paste0(jobname, "_normalization_boxplot.pdf")))
   print(cowplot::plot_grid(p1, p2, ncol = 2))
   grDevices::dev.off()
 
@@ -280,7 +280,7 @@ limmaFragpipeTMT <- function(inputPath,
   fit2 <- limma::contrasts.fit(fit, contrast.matrix)
   fit2 <- limma::eBayes(fit2)
 
-  grDevices::pdf(here::here(outputPath, "output", "plots", paste0(jobname, "_limma_mds-plot.pdf")))
+  grDevices::pdf(here::here(outputPath, "plots", paste0(jobname, "_limma_mds-plot.pdf")))
   limma::plotMDS(matrix_norm)
   grDevices::dev.off()
 
@@ -301,47 +301,51 @@ limmaFragpipeTMT <- function(inputPath,
     relocate(protein_name, .after = protein_id)
 
   df2 <- df %>%
-    pivot_wider(
-      id_cols = c(protein_id, protein_name),
-      names_from = contrast,
-      values_from = c(logFC, P.Value, adj.P.Val),
-      names_sep = "_"
-    )
+    split(.$contrast)
 
-  sheets <- list(
+  # df2 <- df %>%
+  #   pivot_wider(
+  #     id_cols = c(protein_id, protein_name),
+  #     names_from = contrast,
+  #     values_from = c(logFC, P.Value, adj.P.Val),
+  #     names_sep = "_"
+  #   )
+
+  sheets <- c(
+    list(
     "Metadata" = metadata,
     "NormalizedAbundances" = norm,
     "Contrasts" = as.data.frame(contrast_formulas),
     "limmaDEA_long" = df,
-    "limmaDEA_wide" = df2,
     "UniqueProteins" = uniquePerGroup
-  )
+  ),
+  df2)
 
   if (force == TRUE) {
 
     writexl::write_xlsx(x = sheets,
-                        path = here::here(outputPath, "output", "tables", paste0(jobname, "_results.xlsx")),
+                        path = here::here(outputPath, "tables", paste0(jobname, "_results.xlsx")),
                         format_headers = FALSE)
 
     for(i in names(sheets)) {
     readr::write_csv(x = sheets[[i]],
-                     path = here::here(outputPath, "output", "tables", paste0(jobname, "_", i, ".csv")))
+                     path = here::here(outputPath, "tables", paste0(jobname, "_", i, ".csv")))
     }
 
-  } else if (file.exists(here::here(outputPath, "output", "tables", paste0(jobname, "_results.xlsx")))) {
+  } else if (file.exists(here::here(outputPath, "tables", paste0(jobname, "_results.xlsx")))) {
 
     print(paste0("Contrasts already performed and can be found in ",
-                 here::here(outputPath, "output", "tables", paste0(jobname, "_results.xlsx"))))
+                 here::here(outputPath, "tables", paste0(jobname, "_results.xlsx"))))
 
   } else {
 
     writexl::write_xlsx(x = sheets,
-                        path = here::here(outputPath, "output", "tables", paste0(jobname, "_results.xlsx")),
+                        path = here::here(outputPath, "tables", paste0(jobname, "_results.xlsx")),
                         format_headers = FALSE)
 
     for(i in names(sheets)) {
       readr::write_csv(x = sheets[[i]],
-                       path = here::here(outputPath, "output", "tables", paste0(jobname, "_", i, ".csv")))
+                       path = here::here(outputPath, "tables", paste0(jobname, "_", i, ".csv")))
 
     }
   }
