@@ -1,0 +1,2 @@
+load("/Volumes/unixhomes/gd2417/useful_things/Scripts/gsptools/data/translationProteinsHs.rda")
+translationProteinsHs
