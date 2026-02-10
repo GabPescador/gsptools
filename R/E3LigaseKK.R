@@ -9,6 +9,3 @@
 #' }
 #' @source Sent by Kamena Kostova on 2025.
 "E3LigaseKK"
-
-E3LigaseKK <- read_excel("/n/projects/gd2417/Tanushree/PROT-1127/4_input/E3_list.xlsx")
-
