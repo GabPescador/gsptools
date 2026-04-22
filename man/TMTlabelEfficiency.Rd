@@ -4,10 +4,12 @@
 \alias{TMTlabelEfficiency}
 \title{Calculates labeling efficiency from TMT files}
 \usage{
-TMTlabelEfficiency(inputPath)
+TMTlabelEfficiency(inputPath, outputPath)
 }
 \arguments{
 \item{inputPath}{Input path where "psm.tsv" files are located.}
+
+\item{outputPath}{Output path to save a .csv file with labeling efficiency stats.}
 }
 \value{
 Returns a dataframe with calculations per subfolder found.

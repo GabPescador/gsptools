@@ -1,18 +1,17 @@
-#' Imports SILAC PSM tables from Fragpipe-DDA mode and calculates labeling efficiency
+#' Imports SILAC PSM tables from Fragpipe-DIA mode and calculates labeling efficiency
 #'
 #' This function takes an inputPath as the 3_fragpipe/results folder and reads all "psm.tsv" to
 #' calculate SILAC labeling efficiency. It outputs a dataframe with all stats and saves a histogram
-#' and a scatter plot for each sample found.
+#' and a scatter plot for each sample found. NOTE: The ratio plots were not updated for the DIA input
+#' files, still needs to be implemented. However, labeling efficiency can be calculated with this function.
 #'
 #' @param inputPath Input path directing to 3_fragpipe/results.
 #' @param outputpath Output path to save all the outputs.
-#' @param jobname Character string to identify results outputs.
 #' @return Generates the labeling efficiency stats and saves QC plots in outputPath.
 #' @export
 
-silacDDALabelingEfficiency <- function(inputPath,
-                                       outputPath,
-                                       jobname){
+silacDIALabelingEfficiency <- function(inputPath,
+                                       outputPath){
 
   # Peptide modification information
   file_paths <- list.files(inputPath,
@@ -20,16 +19,11 @@ silacDDALabelingEfficiency <- function(inputPath,
                            recursive = TRUE,
                            full.names = TRUE)
 
-  df_list <- map(file_paths, fread)
-  names(df_list) <- basename(dirname(file_paths))
+  df_list <- fread(file_paths)  %>% # diaNN gives all files already in a single df
+    filter(Qvalue <= 0.01) %>%
+    mutate(sample = word(`Spectrum File`, start = 5, end = 5, sep = "_"))
 
-  df_list2 <- list()
-  for(i in names(df_list)){
-    temp <- df_list[[i]] %>%
-      filter(Qvalue <= 0.01) # FDR of 1% (0.01)
-
-    df_list2[[i]] <- temp
-  }
+  df_list2 <- split(df_list, df_list$sample)
 
   results <- list()
   ratios <- list()
@@ -133,7 +127,7 @@ silacDDALabelingEfficiency <- function(inputPath,
       theme_minimal()
 
     # Saving LE plots
-    pdf(here(outputPath, "plots", paste0(jobname, "_", i, "_LE.pdf")), width = 8, height = 3)
+    pdf(here(outputPath, "plots", paste0(i, "_LE.pdf")), width = 8, height = 3)
     print(p1 + p2)
     dev.off()
 
@@ -231,7 +225,7 @@ silacDDALabelingEfficiency <- function(inputPath,
 
   combined_df <- bind_rows(combined_df, deviation_row)
 
-  write_csv(combined_df, here(outputPath, "tables", paste0(jobname, "_SILAC_labeling_efficiency_stats.csv")))
+  write_csv(combined_df, here(outputPath, "tables", "SILAC_labeling_efficiency_stats.csv"))
 
   p3 <- combined_df %>%
     reshape2::melt() %>%
@@ -283,7 +277,7 @@ silacDDALabelingEfficiency <- function(inputPath,
     theme_classic() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-  pdf(here(outputPath, "plots", paste0(jobname, "_SILAC_stats.pdf")), width = 5, height = 4)
+  pdf(here(outputPath, "plots", "SILAC_stats.pdf"), width = 5, height = 4)
   print(p3)
   print(p4)
   print(p5)
