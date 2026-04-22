@@ -12,7 +12,7 @@ TMTlabelEfficiency(inputPath, outputPath)
 \item{outputPath}{Output path to save a .csv file with labeling efficiency stats.}
 }
 \value{
-Returns a dataframe with calculations per subfolder found.
+Returns a dataframe with calculations per subfolder found and saves dataframe as a .csv file with current date and time.
 }
 \description{
 This function takes an inputPath from FragPipe results where several subfolders

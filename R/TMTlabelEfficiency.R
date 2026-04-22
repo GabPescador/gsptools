@@ -6,7 +6,7 @@
 #'
 #' @param inputPath Input path where "psm.tsv" files are located.
 #' @param outputPath Output path to save a .csv file with labeling efficiency stats.
-#' @return Returns a dataframe with calculations per subfolder found.
+#' @return Returns a dataframe with calculations per subfolder found and saves dataframe as a .csv file with current date and time.
 #' @export
 
 TMTlabelEfficiency <- function(inputPath,
@@ -35,7 +35,7 @@ TMTlabelEfficiency <- function(inputPath,
                               sample = .y)) %>%
                    dplyr::relocate(sample, .before = label)
 
-  readr::write_csv(psm_df, outputPath)
+  readr::write_csv(psm_df, here::here(outputPath, paste0("labeling_efficiency_", format(Sys.time(), "%Y%m%d-%H%M%S"))))
 
   return(psm_df)
 }
