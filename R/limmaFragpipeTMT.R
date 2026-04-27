@@ -27,15 +27,17 @@ limmaFragpipeTMT <- function(inputPath,
                              exclude = NULL){
 
   # Check that tables are in the input folder
-  if (file.exists(paste0(inputPath, "metadata.csv")) &
-      file.exists(paste0(inputPath, "contrasts.csv")) &
-      file.exists(paste0(inputPath, "abundance_protein_MD.tsv"))) {
+  if (file.exists(here(inputPath, "metadata.csv")) &
+      file.exists(here(inputPath, "contrasts.csv")) &
+      file.exists(here(inputPath, "abundance_protein_MD.tsv")) &
+      file.exists(here(inputPath, "psm.tsv")) &
+      length(list.files(inputPath, pattern = "\\.mzML$")) > 0) {
 
     print("Input tables exists, proceeding with pipeline...")
 
   } else {
 
-    stop("No metadata.csv, contrasts.csv and/or abundance_protein_MD.tsv found, stopping execution.")
+    stop("No metadata.csv, contrasts.csv, abundance_protein_MD.tsv  and/or psm.tsv found, stopping execution.")
 
   }
 
@@ -102,6 +104,67 @@ limmaFragpipeTMT <- function(inputPath,
 
   }
 
+  # Basic stats for the TMT run
+  basic_stats <- data.table::fread(here::here(inputPath, "psm.tsv")) %>%
+    stats::setNames(make.unique(snakecase::to_snake_case(names(.)))) %>%
+    dplyr::filter(qvalue <= 0.05) %>%
+    dplyr::group_by(spectrum_file) %>%
+    dplyr::summarize(psms = n(),
+                     protein_groups = n_distinct(protein_id)) %>%
+    dplyr::mutate(spectrum_file = sub("^interact-(.+)\\.pep\\.xml$", "\\1", spectrum_file))
+
+  # Chromatogram plots
+  mzML_files <- list.files(inputPath, pattern = "\\.mzML$", full.names = TRUE)
+  chromatogram_list <- vector("list", length(mzML_files))
+
+  for(i in 1:length(mzML_files)){
+
+    msdata <- RaMS::grabMSdata(mzML_files[i], grab_what = "TIC")
+
+    p <- ggplot(msdata$TIC, aes(x = rt, y = int)) +
+      geom_line(color = "black", linewidth = 0.4) +        # thin line like instrument software
+      geom_area(fill = "black") +         # filled area under the curve
+      scale_y_continuous(
+        expand = expansion(mult = c(0, 0.05)),             # start y-axis at 0
+        labels = scales::scientific                         # scientific notation on y-axis
+      ) +
+      scale_x_continuous(
+        expand = expansion(mult = c(0.01, 0.01))           # minimal padding on x-axis
+      ) +
+      labs(
+        x = "Retention Time (min)",
+        y = "Intensity",
+        title = paste0(sub("_uncalibrated.\\mzML$", "\\1", basename(mzML_files[i])), " TIC")
+      ) +
+      theme_classic() +                                    # clean white background, no gridlines
+      theme(
+        axis.line = element_line(color = "black", linewidth = 0.5),
+        axis.ticks = element_line(color = "black"),
+        axis.text = element_text(color = "black", size = 10),
+        axis.title = element_text(color = "black", size = 11),
+        plot.title = element_text(hjust = 0.5, size = 12)  # centered title
+      )
+
+    chromatogram_list[[i]] <- p
+
+    rm(msdata, p)
+    gc()
+  }
+
+  # Split list into chunks of 4
+  chunks <- split(chromatogram_list, ceiling(seq_along(chromatogram_list) / 4))
+
+  # Loop over each chunk
+  for (i in seq_along(chunks)) {
+    png(here::here(outputPath, "plots", paste0(jobname, "_chromatograms_page", i, ".png")),
+        units = "in", res = 300, width = 8, height = 11)
+
+    p <- cowplot::plot_grid(plotlist = chunks[[i]], ncol = 1)
+    print(p)
+
+    dev.off()
+  }
+
   # QC for before and after normalization
   # Before normalization
   tmt <- data.table::fread(here::here(inputPath, "abundance_protein_MD.tsv")) %>%
@@ -163,7 +226,7 @@ limmaFragpipeTMT <- function(inputPath,
       # summarize(mean = mean(value, na.rm=TRUE))
 
     norm <- norm_long %>%
-      pivot_wider(
+      tidyr::pivot_wider(
         id_cols = c(protein_id, protein_name, reference_intensity),
         names_from = variable,
         values_from = c(value),
@@ -314,6 +377,7 @@ limmaFragpipeTMT <- function(inputPath,
   sheets <- c(
     list(
     "Metadata" = metadata,
+    "BasicStats" = basic_stats,
     "NormalizedAbundances" = norm,
     "Contrasts" = as.data.frame(contrast_formulas),
     "limmaDEA_long" = df,
@@ -329,7 +393,7 @@ limmaFragpipeTMT <- function(inputPath,
 
     for(i in names(sheets)) {
     readr::write_csv(x = sheets[[i]],
-                     path = here::here(outputPath, "tables", paste0(jobname, "_", i, ".csv")))
+                     file = here::here(outputPath, "tables", paste0(jobname, "_", i, ".csv")))
     }
 
   } else if (file.exists(here::here(outputPath, "tables", paste0(jobname, "_results.xlsx")))) {
@@ -345,7 +409,7 @@ limmaFragpipeTMT <- function(inputPath,
 
     for(i in names(sheets)) {
       readr::write_csv(x = sheets[[i]],
-                       path = here::here(outputPath, "tables", paste0(jobname, "_", i, ".csv")))
+                       file = here::here(outputPath, "tables", paste0(jobname, "_", i, ".csv")))
 
     }
   }

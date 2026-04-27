@@ -14,9 +14,9 @@
 importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
 
   # Check that tables are in the input folder
-  if (file.exists(paste0(inputPath, "metadata.csv")) &
-      file.exists(paste0(inputPath, "contrasts.csv")) &
-      file.exists(paste0(inputPath, "abundance_protein_MD.tsv"))) {
+  if (file.exists(here(inputPath, "metadata.csv")) &
+      file.exists(here(inputPath, "contrasts.csv")) &
+      file.exists(here(inputPath, "abundance_protein_MD.tsv"))) {
 
     print("Input tables exists, proceeding with pipeline...")
 
