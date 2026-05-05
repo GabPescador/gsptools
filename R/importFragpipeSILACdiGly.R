@@ -361,7 +361,7 @@ df2_digly <- diGly_long %>%
 
   }
 
-  Description of result tables
+  #Description of result tables
   description <- data.table::fread(system.file("extdata", "importFragpipeSILACdigly_examples", "outputDescription.csv",
                                 package = "gsptools"))
 
