@@ -1,0 +1,11 @@
+﻿sample,experiment,group,replicate,negate
+digly_ctr_h_prpf_l_23_ul,digly,prpf-ctr,1,TRUE
+digly_ctr_l_prpf_h_23_ul,digly,prpf-ctr,2,FALSE
+digly_wt_h_prpf_l_20_ul,digly,prpf-ctr,3,TRUE
+digly_wt_l_prpf_h_20_ul,digly,prpf-ctr,4,FALSE
+digly_wt_h_mut_l_23_ul,digly,mut-wt,1,TRUE
+digly_wt_l_mut_h_23_ul,digly,mut-wt,2,FALSE
+input_wt_h_mut_l,input,mut-wt,1,TRUE
+input_wt_l_mut_h,input,mut-wt,2,FALSE
+input_wt_h_prpf_l,input,prpf-ctr,1,TRUE
+input_wt_l_prpf_h,input,prpf-ctr,2,FALSE

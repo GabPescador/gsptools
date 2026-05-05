@@ -1,0 +1,6 @@
+﻿sheet_name,description
+Metadata,Metadata from experiment and how samples were grouped together.
+Abundances,Abundances of all sites/proteins identified by FragPipe divided into Light and Heavy.
+OneSample-ttest,One-sample t.test on SILAC ratios to test for difference between a ratio of 0 (no change).
+UniqueSites,Unique sites/proteins in each group. Group collumn refers to which group this site/protein was identified.
+*contrast names*,Output from one-sample t.test in wide format for more human readable friendly data. You should have one sheet per group specified in metadata.csv.
