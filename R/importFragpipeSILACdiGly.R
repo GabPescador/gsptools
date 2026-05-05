@@ -361,10 +361,9 @@ df2_digly <- diGly_long %>%
 
   }
 
-  # Description of result tables
-  # description <- data.table::fread(system.file("extdata", "importFragpipeSILACdigly_examples", "outputDescription.csv",
-  #                               package = "gsptools"))
-  description <- fread("/home/gd2417/useful_things/Scripts/gsptools/inst/extdata/importFragpipeSILACdigly_examples/outputDescription.csv")
+  Description of result tables
+  description <- data.table::fread(system.file("extdata", "importFragpipeSILACdigly_examples", "outputDescription.csv",
+                                package = "gsptools"))
 
   if (proteinInput == TRUE){
   sheets_input <- c(
