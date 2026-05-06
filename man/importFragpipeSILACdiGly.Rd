@@ -14,6 +14,7 @@ importFragpipeSILACdiGly(
   proteinInput = TRUE,
   groups = FALSE,
   force = FALSE,
+  skipChromatogram = FALSE,
   exclude = NULL
 )
 }
@@ -33,6 +34,8 @@ importFragpipeSILACdiGly(
 \item{groups}{Defaults to FALSE. If TRUE, will use the type column in metadata.csv to search unique proteins based on those groupings.}
 
 \item{force}{Defaults to FALSE. Forces saving the results table in case it already exists.}
+
+\item{skipChromatogram}{Defaults to FALSE. Skips generation of chromatogram plots.}
 
 \item{exclude}{Defaults to NULL. Defines a character vector of columns to be excluded from the pipeline.}
 

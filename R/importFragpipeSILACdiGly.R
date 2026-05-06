@@ -13,6 +13,7 @@
 #' @param proteinInput Defaults to TRUE. Includes protein input for comparisons.
 #' @param groups Defaults to FALSE. If TRUE, will use the type column in metadata.csv to search unique proteins based on those groupings.
 #' @param force Defaults to FALSE. Forces saving the results table in case it already exists.
+#' @param skipChromatogram Defaults to FALSE. Skips generation of chromatogram plots.
 #' @param exclude Defaults to NULL. Defines a character vector of columns to be excluded from the pipeline.
 #' @return Generates the results files and saves them in the outputPath.
 #' @export
@@ -26,6 +27,7 @@ importFragpipeSILACdiGly <- function(inputPath,
                                      proteinInput = TRUE,
                                      groups = FALSE,
                                      force = FALSE,
+                                     skipChromatogram = FALSE,
                                      exclude = NULL){
 
   if (proteinInput == TRUE){
@@ -33,7 +35,7 @@ importFragpipeSILACdiGly <- function(inputPath,
     if (file.exists(paste0(inputPath, "metadata.csv")) &
         # file.exists(paste0(inputPath, "contrasts.csv")) &
         file.exists(paste0(inputPath, "combined_modified_peptide_label_quant.tsv")) &
-        # file.exists(Sys.glob(paste0(inputPath, "diGly_*normalized.txt"))) &
+        file.exists(paste0(inputPath, "input_combined_modified_peptide_label_quant.tsv")) &
         file.exists(paste0(inputPath, "combined_protein_label_quant.tsv"))
         # file.exists(Sys.glob(paste0(inputPath, "input_*normalized.txt"))))
         ) {
@@ -111,6 +113,9 @@ importFragpipeSILACdiGly <- function(inputPath,
   input <- data.table::fread(here::here(Sys.glob(paste0(inputPath, "combined_protein_label_quant.tsv")))) %>%
     setNames(snakecase::to_snake_case(names(.))) %>%
     filter(!str_detect(protein, "contam"))
+
+  input_peptides <- data.table::fread(here::here(Sys.glob(paste0(inputPath, "input_combined_modified_peptide_label_quant.tsv")))) %>%
+    setNames(snakecase::to_snake_case(names(.)))
   }
 
   # Exclude replicates from exclude parameter
@@ -163,56 +168,85 @@ importFragpipeSILACdiGly <- function(inputPath,
     dplyr::mutate(spectrum_file = sub("^interact-(.+)\\.pep\\.xml$", "\\1", spectrum_file))
 
   # Chromatogram plots
-  mzML_files <- list.files(inputPath, pattern = "\\.mzML$", full.names = TRUE)
-  chromatogram_list <- vector("list", length(mzML_files))
+  if (skipChromatogram == FALSE) {
 
-  for(i in 1:length(mzML_files)){
+    mzML_files <- list.files(inputPath, pattern = "\\.mzML$", full.names = TRUE)
+    chromatogram_list <- vector("list", length(mzML_files))
 
-    msdata <- RaMS::grabMSdata(mzML_files[i], grab_what = "TIC")
+    for(i in 1:length(mzML_files)){
 
-    p <- ggplot(msdata$TIC, aes(x = rt, y = int)) +
-      geom_line(color = "black", linewidth = 0.4) +        # thin line like instrument software
-      geom_area(fill = "black") +         # filled area under the curve
-      scale_y_continuous(
-        expand = expansion(mult = c(0, 0.05)),             # start y-axis at 0
-        labels = scales::scientific                         # scientific notation on y-axis
-      ) +
-      scale_x_continuous(
-        expand = expansion(mult = c(0.01, 0.01))           # minimal padding on x-axis
-      ) +
-      labs(
-        x = "Retention Time (min)",
-        y = "Intensity",
-        title = paste0(sub("_uncalibrated.\\mzML$", "\\1", basename(mzML_files[i])), " TIC")
-      ) +
-      theme_classic() +                                    # clean white background, no gridlines
-      theme(
-        axis.line = element_line(color = "black", linewidth = 0.5),
-        axis.ticks = element_line(color = "black"),
-        axis.text = element_text(color = "black", size = 10),
-        axis.title = element_text(color = "black", size = 11),
-        plot.title = element_text(hjust = 0.5, size = 12)  # centered title
-      )
+      msdata <- RaMS::grabMSdata(mzML_files[i], grab_what = "TIC")
 
-    chromatogram_list[[i]] <- p
+      p <- ggplot(msdata$TIC, aes(x = rt, y = int)) +
+        geom_line(color = "black", linewidth = 0.4) +        # thin line like instrument software
+        geom_area(fill = "black") +         # filled area under the curve
+        scale_y_continuous(
+          expand = expansion(mult = c(0, 0.05)),             # start y-axis at 0
+          labels = scales::scientific                         # scientific notation on y-axis
+        ) +
+        scale_x_continuous(
+          expand = expansion(mult = c(0.01, 0.01))           # minimal padding on x-axis
+        ) +
+        labs(
+          x = "Retention Time (min)",
+          y = "Intensity",
+          title = paste0(sub("_uncalibrated.\\mzML$", "\\1", basename(mzML_files[i])), " TIC")
+        ) +
+        theme_classic() +                                    # clean white background, no gridlines
+        theme(
+          axis.line = element_line(color = "black", linewidth = 0.5),
+          axis.ticks = element_line(color = "black"),
+          axis.text = element_text(color = "black", size = 10),
+          axis.title = element_text(color = "black", size = 11),
+          plot.title = element_text(hjust = 0.5, size = 12)  # centered title
+        )
 
-    rm(msdata, p)
-    gc()
+      chromatogram_list[[i]] <- p
+
+      rm(msdata, p)
+      gc()
+      }
+
+    # Split list into chunks of 4
+    chunks <- split(chromatogram_list, ceiling(seq_along(chromatogram_list) / 4))
+
+    # Loop over each chunk
+    for (i in seq_along(chunks)) {
+      png(here::here(outputPath, "plots", paste0(jobname, "_chromatograms_page", i, ".png")),
+          units = "in", res = 300, width = 8, height = 11)
+
+      p <- cowplot::plot_grid(plotlist = chunks[[i]], ncol = 1)
+      print(p)
+
+      dev.off()
+    }
   }
 
-  # Split list into chunks of 4
-  chunks <- split(chromatogram_list, ceiling(seq_along(chromatogram_list) / 4))
+  # Creating tables for match types for QC
+  # Checking percentages of how spectra were matched
+  # diGly
+  cols_digly <- diGly %>%
+    select(contains("match_type")) %>%
+    colnames()
+  match_digly <- rbindlist(lapply(cols_digly, function(col) {
+    diGly[, .N, by = col][
+      , `:=`(column = col, pct = round(N / sum(N) * 100, 1))
+    ] |> setnames(col, "match_type")
+  })) %>%
+    filter(!match_type == "MBC")
 
-  # Loop over each chunk
-  for (i in seq_along(chunks)) {
-    png(here::here(outputPath, "plots", paste0(jobname, "_chromatograms_page", i, ".png")),
-        units = "in", res = 300, width = 8, height = 11)
+  # diGly
+  cols_input <- input_peptides %>%
+    select(contains("match_type")) %>%
+    colnames()
+  match_input <- rbindlist(lapply(cols_input, function(col) {
+    input_peptides[, .N, by = col][
+      , `:=`(column = col, pct = round(N / sum(N) * 100, 1))
+    ] |> setnames(col, "match_type")
+  })) %>%
+    filter(!match_type == "MBC")
 
-    p <- cowplot::plot_grid(plotlist = chunks[[i]], ncol = 1)
-    print(p)
-
-    dev.off()
-  }
+  match_types <- rbind(match_digly, match_input)
 
   # Taking out sites that are not present in at least 2 replicates if replicateFilter == TRUE
   if (replicateFilter == TRUE){
@@ -475,6 +509,7 @@ df2_digly <- diGly_long %>%
     list(
       "Description" = description,
       "BasicStats" = basic_stats,
+      "MatchTypes" = match_types,
       "Metadata" = metadata,
       "Abundances" = input,
       "Ratios" = input_correlations,
@@ -487,6 +522,7 @@ df2_digly <- diGly_long %>%
     list(
       "Description" = description,
       "BasicStats" = basic_stats,
+      "MatchTypes" = match_types,
       "Metadata" = metadata,
       "Abundances" = diGly,
       "Ratios" = diGly_correlations,
@@ -500,6 +536,7 @@ df2_digly <- diGly_long %>%
       list(
         "Description" = description,
         "BasicStats" = basic_stats,
+        "MatchTypes" = match_types,
         "Metadata" = metadata,
         "Abundances" = diGly,
         "Ratios" = diGly_correlations,
