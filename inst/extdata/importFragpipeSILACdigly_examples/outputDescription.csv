@@ -1,4 +1,5 @@
 ﻿sheet_name,description
+BasicStats,Number of PSMs and protein groups found in each raw file.
 Metadata,Metadata from experiment and how samples were grouped together.
 Abundances,Abundances of all sites/proteins identified by FragPipe divided into Light and Heavy.
 OneSample-ttest,One-sample t.test on SILAC ratios to test for difference between a ratio of 0 (no change).

@@ -5,7 +5,8 @@
 #' and outputs result files as an excel table for later import in ShinyApp.
 #'
 #' @param inputPath Input path where "metadata.csv", "contrast.csv", "digly_combined_modified_peptide_label_quant.tsv" and "input_combined_modified_peptide_label_quant.tsv" are located.
-#' @param psmPath Path to where all psm.tsv files are for the digly search.
+#' @param psmDiglyPath Path to where all psm.tsv files are for the digly search.
+#' @param psmInputPath Path to where all psm.tsv files are for the input search.
 #' @param jobname Specifies the folder name for convenience I always use the PROT-XXXX.
 #' @param outputpath Output path to save all the outputs.
 #' @param replicateFilter Defaults to FALSE. Filters proteins that are not present in at least 2 replicates. Since majority of SILAC experiments only have 2 replicates (swaps) this is FALSE by default.
@@ -17,7 +18,8 @@
 #' @export
 
 importFragpipeSILACdiGly <- function(inputPath,
-                                     psmPath,
+                                     psmDiglyPath,
+                                     psmInputPath,
                                      jobname,
                                      outputPath,
                                      replicateFilter = FALSE,
@@ -72,7 +74,7 @@ importFragpipeSILACdiGly <- function(inputPath,
 
   # Find all psm.tsv files recursively in a directory
   files <- list.files(
-    path = here(psmPath),
+    path = here(psmDiglyPath),
     pattern = "^psm\\.tsv$",
     recursive = TRUE,
     full.names = TRUE
@@ -139,6 +141,78 @@ importFragpipeSILACdiGly <- function(inputPath,
         mutate(across(where(is.character), snakecase::to_snake_case))
 
     }
+
+  # Find all psm.tsv files recursively in a directory
+  files_input <- list.files(
+    path = here(psmInputPath),
+    pattern = "^psm\\.tsv$",
+    recursive = TRUE,
+    full.names = TRUE
+  )
+
+  # Stats and chromatograms
+  # Basic stats for the TMT run
+  basic_stats <- c(files, files_input) %>%
+    lapply(readr::read_tsv) %>%
+    dplyr::bind_rows() %>%
+    stats::setNames(make.unique(snakecase::to_snake_case(names(.)))) %>%
+    dplyr::filter(qvalue <= 0.05) %>%
+    dplyr::group_by(spectrum_file) %>%
+    dplyr::summarize(psms = n(),
+                     protein_groups = n_distinct(protein_id)) %>%
+    dplyr::mutate(spectrum_file = sub("^interact-(.+)\\.pep\\.xml$", "\\1", spectrum_file))
+
+  # Chromatogram plots
+  mzML_files <- list.files(inputPath, pattern = "\\.mzML$", full.names = TRUE)
+  chromatogram_list <- vector("list", length(mzML_files))
+
+  for(i in 1:length(mzML_files)){
+
+    msdata <- RaMS::grabMSdata(mzML_files[i], grab_what = "TIC")
+
+    p <- ggplot(msdata$TIC, aes(x = rt, y = int)) +
+      geom_line(color = "black", linewidth = 0.4) +        # thin line like instrument software
+      geom_area(fill = "black") +         # filled area under the curve
+      scale_y_continuous(
+        expand = expansion(mult = c(0, 0.05)),             # start y-axis at 0
+        labels = scales::scientific                         # scientific notation on y-axis
+      ) +
+      scale_x_continuous(
+        expand = expansion(mult = c(0.01, 0.01))           # minimal padding on x-axis
+      ) +
+      labs(
+        x = "Retention Time (min)",
+        y = "Intensity",
+        title = paste0(sub("_uncalibrated.\\mzML$", "\\1", basename(mzML_files[i])), " TIC")
+      ) +
+      theme_classic() +                                    # clean white background, no gridlines
+      theme(
+        axis.line = element_line(color = "black", linewidth = 0.5),
+        axis.ticks = element_line(color = "black"),
+        axis.text = element_text(color = "black", size = 10),
+        axis.title = element_text(color = "black", size = 11),
+        plot.title = element_text(hjust = 0.5, size = 12)  # centered title
+      )
+
+    chromatogram_list[[i]] <- p
+
+    rm(msdata, p)
+    gc()
+  }
+
+  # Split list into chunks of 4
+  chunks <- split(chromatogram_list, ceiling(seq_along(chromatogram_list) / 4))
+
+  # Loop over each chunk
+  for (i in seq_along(chunks)) {
+    png(here::here(outputPath, "plots", paste0(jobname, "_chromatograms_page", i, ".png")),
+        units = "in", res = 300, width = 8, height = 11)
+
+    p <- cowplot::plot_grid(plotlist = chunks[[i]], ncol = 1)
+    print(p)
+
+    dev.off()
+  }
 
   # Taking out sites that are not present in at least 2 replicates if replicateFilter == TRUE
   if (replicateFilter == TRUE){
@@ -288,6 +362,37 @@ importFragpipeSILACdiGly <- function(inputPath,
       relocate(gene, .before = group)
   }
 
+  # Saving processed ratios for easier plotting in shiny
+  # digly
+  diGly_correlations <- diGly %>%
+    select(modified_site, protein_id, gene, peptide_sequence, modified_peptide, contains("log_2")) %>%
+    reshape2::melt(id.vars = colnames(.)[1:5]) %>%
+    mutate(variable = sub("_log_2.*", "", variable)) %>%
+    base::merge(., metadata, by.x = "variable", by.y = "sample") %>%
+    mutate(value = case_when(
+      negate == TRUE ~ value*-1,
+      negate == FALSE ~ value
+    )) %>%
+    select(modified_site, modified_peptide, value, experiment, group, replicate) %>%
+    mutate(sample_id = paste(experiment, group, replicate, sep = "_")) %>%
+    select(modified_site, modified_peptide, value, sample_id) %>%
+    pivot_wider(names_from = sample_id, values_from = value)
+
+  # input
+  input_correlations <- input %>%
+    select(protein_id, gene, contains("log_2")) %>%
+    reshape2::melt(id.vars = colnames(.)[1:2]) %>%
+    mutate(variable = sub("_median_log_2.*", "", variable)) %>%
+    base::merge(., metadata, by.x = "variable", by.y = "sample") %>%
+    mutate(value = case_when(
+      negate == TRUE ~ value*-1,
+      negate == FALSE ~ value
+    ))  %>%
+    select(protein_id, value, experiment, group, replicate) %>%
+    mutate(sample_id = paste(experiment, group, replicate, sep = "_")) %>%
+    select(protein_id, value, sample_id) %>%
+    pivot_wider(names_from = sample_id, values_from = value)
+
   # t.tests based on number of replicates
   # diGly
   diGly_long <- diGly %>%
@@ -299,7 +404,7 @@ importFragpipeSILACdiGly <- function(inputPath,
       negate == TRUE ~ value*-1,
       negate == FALSE ~ value
     )) %>%
-    group_by(group, experiment, modified_site) %>%
+    group_by(group, experiment, modified_site, gene) %>%
     summarize(
       p.val = tryCatch(
         t.test(value, mu = 0)$p.value,
@@ -325,7 +430,7 @@ df2_digly <- diGly_long %>%
 
   if (proteinInput == TRUE) {
 
-    # diGly
+    # input
     input_long <- input %>%
       select(protein_id, gene, contains("log_2")) %>%
       reshape2::melt(id.vars = colnames(.)[1:2]) %>%
@@ -369,8 +474,10 @@ df2_digly <- diGly_long %>%
   sheets_input <- c(
     list(
       "Description" = description,
+      "BasicStats" = basic_stats,
       "Metadata" = metadata,
       "Abundances" = input,
+      "Ratios" = input_correlations,
       "OneSample-ttest" = input_long,
       "UniqueSites" = uniquePerGroup_input
     ),
@@ -379,8 +486,10 @@ df2_digly <- diGly_long %>%
   sheets_diGly <- c(
     list(
       "Description" = description,
+      "BasicStats" = basic_stats,
       "Metadata" = metadata,
       "Abundances" = diGly,
+      "Ratios" = diGly_correlations,
       "OneSample-ttest" = diGly_long,
       "UniqueSites" = uniquePerGroup_diGly
     ),
@@ -390,8 +499,10 @@ df2_digly <- diGly_long %>%
     sheets_diGly <- c(
       list(
         "Description" = description,
+        "BasicStats" = basic_stats,
         "Metadata" = metadata,
         "Abundances" = diGly,
+        "Ratios" = diGly_correlations,
         "OneSample-ttest" = diGly_long,
         "UniqueSites" = uniquePerGroup_diGly
       ),
