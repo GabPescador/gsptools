@@ -141,7 +141,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     print(cowplot::plot_grid(p1, p2, ncol = 2))
     grDevices::dev.off()
 
-    # Before normalization diGly
+    if(proteinInput == TRUE) {
+    # Before normalization Input
     tmt <- data.table::fread(here::here(inputPath, "abundance_protein_MD.tsv")) %>%
       dplyr::rename("ProteinID" = "Index",
                     "ProteinName" = "Gene") %>%
@@ -176,6 +177,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     print(cowplot::plot_grid(p1, p2, ncol = 2))
     grDevices::dev.off()
 
+    }
+
   # Taking out sites that are not present in at least 2 replicates if replicateFilter == TRUE
   if (replicateFilter == TRUE){
 
@@ -203,6 +206,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
         names_sep = "_"
       )
 
+    if(proteinInput == TRUE){
+
     # Input
     input_long <- input %>%
       reshape2::melt(id.vars = colnames(.)[1:3]) %>%
@@ -226,7 +231,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
         values_from = c(value),
         names_sep = "_"
       )
-
+    }
   }
 
   if (groups == FALSE) {
@@ -245,20 +250,22 @@ limmaFragpipeTMTdiGly <- function(inputPath,
   uniquePerGroup_diGly <- base::merge(uniquePerGroup_diGly, diGly[,c("modified_site", "protein_id", "protein_name")]) %>%
     relocate(protein_name, .before = group)
 
-  # input
-  uniquePerGroup_input <- input %>%
-    reshape2::melt(id.vars = colnames(.)[1:3]) %>%
-    select(protein_id, variable, value) %>%
-    base::merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
-    filter(!is.na(value)) %>%
-    group_by(protein_id) %>%
-    filter(n_distinct(group) == 1) %>%
-    ungroup() %>%
-    distinct(protein_id, group)
+    if(proteinInput == TRUE){
 
-  uniquePerGroup_input <- base::merge(uniquePerGroup_input, input[,c("protein_id", "protein_name")]) %>%
-    relocate(protein_name, .before = group)
+    # input
+    uniquePerGroup_input <- input %>%
+      reshape2::melt(id.vars = colnames(.)[1:3]) %>%
+      select(protein_id, variable, value) %>%
+      base::merge(., metadata[,-3], by.x = "variable", by.y = "sample") %>%
+      filter(!is.na(value)) %>%
+      group_by(protein_id) %>%
+      filter(n_distinct(group) == 1) %>%
+      ungroup() %>%
+      distinct(protein_id, group)
 
+    uniquePerGroup_input <- base::merge(uniquePerGroup_input, input[,c("protein_id", "protein_name")]) %>%
+      relocate(protein_name, .before = group)
+    }
   } else {
 
     # diGly
@@ -288,6 +295,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     uniquePerGroup_diGly <- base::merge(uniquePerGroup_diGly, diGly[,c("modified_site", "protein_id", "protein_name")]) %>%
       relocate(protein_name, .before = group)
 
+    if(proteinInput == TRUE){
+
     # input
     uniquePerGroup_input <- input %>%
       reshape2::melt(id.vars = colnames(.)[1:3]) %>%
@@ -314,6 +323,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     uniquePerGroup_input <- rbind(uniquePerGroup_input, uniquePerType_input)
     uniquePerGroup_input <- base::merge(uniquePerGroup_input, input[,c("protein_id", "protein_name")]) %>%
       relocate(protein_name, .before = group)
+    }
   }
 
   # Matrix for limma
@@ -469,6 +479,8 @@ limmaFragpipeTMTdiGly <- function(inputPath,
     ) %>%
     subtractContrastsWide(., contrast_table)
 
+  if(proteinInput == TRUE){
+
   ube3APA_input <- input %>%
     select(protein_id, reference_intensity:last_col(), -reference_intensity) %>%
     rename("id" = "protein_id") %>%
@@ -483,6 +495,7 @@ limmaFragpipeTMTdiGly <- function(inputPath,
       names_sep = "_"
     ) %>%
     subtractContrastsWide(., contrast_table, diGly = FALSE)
+  }
 
   # Description of result tables
   description <- data.table::fread(system.file("extdata", "importFragpipeTMT_examples", "outputDescription.csv",

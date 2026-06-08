@@ -156,7 +156,7 @@ importFragpipeSILACdiGly <- function(inputPath,
   )
 
   # Stats and chromatograms
-  # Basic stats for the TMT run
+  # Basic stats
   basic_stats <- c(files, files_input) %>%
     lapply(readr::read_tsv) %>%
     dplyr::bind_rows() %>%
@@ -225,26 +225,32 @@ importFragpipeSILACdiGly <- function(inputPath,
   # Creating tables for match types for QC
   # Checking percentages of how spectra were matched
   # diGly
-  cols_digly <- diGly %>%
+  diGly_peptides <- data.table::fread(here::here(inputPath, "combined_modified_peptide_label_quant.tsv")) %>%
+    setNames(snakecase::to_snake_case(names(.))) %>%
+    dplyr::filter(!str_detect(protein, "^contam"))
+
+  cols_digly <- diGly_peptides %>%
     select(contains("match_type")) %>%
     colnames()
   match_digly <- rbindlist(lapply(cols_digly, function(col) {
-    diGly[, .N, by = col][
+    copy(diGly_peptides)[, .N, by = col][
       , `:=`(column = col, pct = round(N / sum(N) * 100, 1))
     ] |> setnames(col, "match_type")
-  })) %>%
-    filter(!match_type == "MBC")
+  }))
+  # %>%
+  #   dplyr::filter(!match_type == "MBC")
 
-  # diGly
+  # Input
   cols_input <- input_peptides %>%
     select(contains("match_type")) %>%
     colnames()
   match_input <- rbindlist(lapply(cols_input, function(col) {
-    input_peptides[, .N, by = col][
+    copy(input_peptides)[, .N, by = col][
       , `:=`(column = col, pct = round(N / sum(N) * 100, 1))
     ] |> setnames(col, "match_type")
-  })) %>%
-    filter(!match_type == "MBC")
+  }))
+  # %>%
+  #   dplyr::filter(!match_type == "MBC")
 
   match_types <- rbind(match_digly, match_input)
 
