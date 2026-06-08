@@ -108,39 +108,39 @@ importDiannMSdap <- function(inputPath, outputPath) {
   # Create the slurm script as .sh ----
 
   script_slurm <- glue::glue(r'(
-    #!/bin/bash
-    #SBATCH --cpus-per-task=15
-    #SBATCH --mem=100G
-    #SBATCH --time=01-00:00:00
-    #SBATCH --output="/home/gd2417/logs/%A_%a.out"
-    #SBATCH --error="/home/gd2417/logs/%A_%a.err"
-    #SBATCH --mail-type=ALL
+  #!/bin/bash
+  #SBATCH --cpus-per-task=15
+  #SBATCH --mem=100G
+  #SBATCH --time=01-00:00:00
+  #SBATCH --output="/home/gd2417/logs/%A_%a.out"
+  #SBATCH --error="/home/gd2417/logs/%A_%a.err"
+  #SBATCH --mail-type=ALL
 
-    cd <<dirname(inputPath)>>
-    mkdir -p <<dirname(inputPath)>>/logs/
+  cd <<dirname(inputPath)>>
+  mkdir -p <<dirname(inputPath)>>/logs/
 
-    # This will copy logs to where our files are being saved
-    trap "cp /home/gd2417/logs/$SLURM_JOB_ID* <<dirname(inputPath)>>/logs/" EXIT
+  # This will copy logs to where our files are being saved
+  trap "cp /home/gd2417/logs/$SLURM_JOB_ID* <<dirname(inputPath)>>/logs/" EXIT
 
-    ml R/4.4.1
+  ml R/4.4.1
 
-    Rscript <<script_path>>
+  Rscript <<script_path>>
 
-    echo "========================================="
-    echo "Done!"
-    echo "End time: $(date)"
-    echo "To see resource usage, run job_stats $SLURM_JOB_ID"
-    echo "========================================="
-    echo " "
-    echo "========================================="
-    echo "Resource usage:"
-    sacct -j $SLURM_JOB_ID \
+  echo "========================================="
+  echo "Done!"
+  echo "End time: $(date)"
+  echo "To see resource usage, run job_stats $SLURM_JOB_ID"
+  echo "========================================="
+  echo " "
+  echo "========================================="
+  echo "Resource usage:"
+  sacct -j $SLURM_JOB_ID \
         --format=JobID,Elapsed,CPUTime,MaxRSS,State \
         --units=G
 
-    # also run job_stats if available
-    command -v job_stats && job_stats $SLURM_JOB_ID | sed "s/\x1B\[[0-9;]*m//g"
-    echo "========================================="
+  # also run job_stats if available
+  command -v job_stats && job_stats $SLURM_JOB_ID | sed "s/\x1B\[[0-9;]*m//g"
+  echo "========================================="
   )', .open = "<<", .close = ">>")
 
   script_path_slurm <- file.path(here::here(dirname(inputPath), "0_scripts/"), paste0(format(Sys.time(), "%Y%m%d_%H%M%S"), "_msdap_slurm.sh"))
