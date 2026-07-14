@@ -48,7 +48,8 @@ processDiannMSdap <- function(inputPath, outputPath) {
     generatePipelineSh(list(
       msdap       = msdap_slurm_path,
       postprocess = post_slurm_path
-    )),
+      ),
+    inputPath = inputPath),
     pipeline_sh_path
   )
   system2("chmod", c("+x", pipeline_sh_path))

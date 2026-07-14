@@ -8,7 +8,7 @@
 #' @keywords internal
 #' @noRd
 
-generatePipelineSh <- function(scriptPaths) {
+generatePipelineSh <- function(scriptPaths, inputPath) {
 
   # Build the submission block for each step dynamically
   n <- length(scriptPaths)
@@ -24,7 +24,7 @@ generatePipelineSh <- function(scriptPaths) {
     )
   })
 
-  log_dir <- file.path(dirname(dirname(scriptPaths)), "logs")
+  log_dir <- file.path(dirname(inputPath), "logs")
 
   job_vars <- paste(paste0("$JOB", seq_along(scriptPaths)), collapse = ",")
 
