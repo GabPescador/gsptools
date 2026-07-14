@@ -17,13 +17,13 @@ generateSlurmScript <- function(scriptPath, inputPath,
                                   jobName = "job",
                                   cpus = 15, mem = "100G",
                                   time = "01-00:00:00") {
-  
+
   log_dir <- file.path(dirname(inputPath), "logs")
   dir.create(log_dir, recursive = TRUE, showWarnings = FALSE)
-  
+
   glue::glue(r'(
 #!/bin/bash
-#SBATCH --job-name=<<job_name>>
+#SBATCH --job-name=<<jobName>>
 #SBATCH --cpus-per-task=<<cpus>>
 #SBATCH --mem=<<mem>>
 #SBATCH --time=<<time>>

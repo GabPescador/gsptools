@@ -9,26 +9,26 @@
 #' @noRd
 
 generatePipelineSh <- function(scriptPaths) {
-  
+
   # Build the submission block for each step dynamically
   n <- length(scriptPaths)
   steps <- lapply(seq_along(scriptPaths), function(i) {
     name     <- toupper(names(scriptPaths)[i])
     var_name <- paste0("JOB", i)
     dep      <- if (i == 1) "" else paste0("--dependency=afterok:$JOB", i - 1, " ")
-    
+
     paste0(
       "# Step ", i, ": ", name, "\n",
       var_name, "=$(sbatch ", dep, scriptPaths[[i]], " | awk '{print $4}')\n",
       'echo "', name, ' job submitted: $', var_name, '"'
     )
   })
-  
+
   job_vars <- paste(paste0("$JOB", seq_along(scriptPaths)), collapse = ",")
-  
+
   glue::glue(r'(
 #!/bin/bash
-#SBATCH --job-name=<<job_name>>
+#SBATCH --job-name=<<jobName>>
 #SBATCH --cpus-per-task=<<cpus>>
 #SBATCH --mem=<<mem>>
 #SBATCH --time=<<time>>
