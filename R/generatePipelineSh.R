@@ -24,14 +24,16 @@ generatePipelineSh <- function(scriptPaths) {
     )
   })
 
+  log_dir <- file.path(dirname(dirname(scriptPaths)), "logs")
+
   job_vars <- paste(paste0("$JOB", seq_along(scriptPaths)), collapse = ",")
 
   glue::glue(r'(
 #!/bin/bash
 #SBATCH --job-name=pipeline_sh
-#SBATCH --cpus-per-task=<<cpus>>
-#SBATCH --mem=<<mem>>
-#SBATCH --time=<<time>>
+#SBATCH --cpus-per-task=15
+#SBATCH --mem=100
+#SBATCH --time=01-00:00:00
 #SBATCH --output="<<log_dir>>/%j_%A_%a.out.out"
 #SBATCH --error="<<log_dir>>/%j_%A_%a.out.err"
 #SBATCH --mail-type=ALL
