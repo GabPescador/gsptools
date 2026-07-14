@@ -28,7 +28,7 @@ generatePipelineSh <- function(scriptPaths) {
 
   glue::glue(r'(
 #!/bin/bash
-#SBATCH --job-name=<<jobName>>
+#SBATCH --job-name=pipeline_sh
 #SBATCH --cpus-per-task=<<cpus>>
 #SBATCH --mem=<<mem>>
 #SBATCH --time=<<time>>
