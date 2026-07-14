@@ -8,7 +8,7 @@
 #' glue::glue block.
 #'
 #' NOTE: sample_metadata.xlsx can be generated manually or with the function
-#' write_template_for_sample_metadata() from MSdap.
+#' write_template_for_sample_metadata() from library(msdap).
 #'
 #' @param inputPath Path where the 4 files necessary are located
 #' @param outputPath Path to where you want to save the MSdap output
@@ -97,7 +97,8 @@ importDiannMSdap <- function(inputPath, outputPath) {
       output_qc_report = TRUE,
       output_abundance_tables = TRUE,
       output_dir = "{msdap_path}",
-      output_within_timestamped_subdirectory = TRUE
+      output_within_timestamped_subdirectory = TRUE,
+      dump_all_data = TRUE
     )
 
   ')

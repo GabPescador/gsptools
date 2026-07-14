@@ -10,7 +10,6 @@ Description: R package for personal and general use custom functions.
 License: GPL (>= 3) + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Imports:
         OrgMassSpecR,
         KEGGREST,
@@ -29,3 +28,4 @@ LazyData: true
 Suggests:
     knitr,
     rmarkdown
+Config/roxygen2/version: 8.0.0
