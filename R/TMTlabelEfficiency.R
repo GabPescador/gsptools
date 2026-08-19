@@ -35,7 +35,7 @@ TMTlabelEfficiency <- function(inputPath,
                               sample = .y)) %>%
                    dplyr::relocate(sample, .before = label)
 
-  readr::write_csv(psm_df, here::here(outputPath, paste0("labeling_efficiency_", format(Sys.time(), "%Y%m%d-%H%M%S"))))
+  readr::write_csv(psm_df, here::here(outputPath, paste0("labeling_efficiency_", format(Sys.time(), "%Y%m%d-%H%M%S"), ".csv")))
 
   return(psm_df)
 }
