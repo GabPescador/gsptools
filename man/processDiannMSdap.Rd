@@ -2,19 +2,46 @@
 % Please edit documentation in R/processDiannMSdap.R
 \name{processDiannMSdap}
 \alias{processDiannMSdap}
-\title{Generates post-processing R script}
+\title{Build the full DIA-NN -> MSDAP -> Shiny pipeline}
 \usage{
-processDiannMSdap(inputPath, outputPath)
+processDiannMSdap(
+  inputPath,
+  outputPath,
+  rawFiles,
+  jobname,
+  species = "Hs",
+  templateAppPath = system.file("templates", "app.r", package = "gsptools"),
+  finalPath = file.path("/home/gd2417/ShinyApps", jobname)
+)
 }
 \arguments{
-\item{inputPath}{Path where input files report.tsv (diann), sample_metadata.xlsx, FASTA used in the search and contrast.csv are located.}
+\item{inputPath}{Path where report.tsv (diann), sample_metadata.xlsx, contrasts.csv and the FASTA live.}
 
-\item{outputPath}{Path where results will be saved.}
+\item{outputPath}{Path where msdap_results/, plots/ and scripts/ are written.}
+
+\item{rawFiles}{Path where the raw vendor files are located.}
+
+\item{jobname}{Job identifier, e.g. "PROT-1256". Used for output filenames and the final deploy path.}
+
+\item{species}{Species code used by app.R's gene-group logic. Defaults to "Hs".}
+
+\item{templateAppPath}{Path to the master app.R template that gets customized per job.}
+
+\item{finalPath}{Where the finished Shiny app is deployed. Defaults to /home/gd2417/\if{html}{\out{<jobname>}}.}
 }
 \value{
-Creates all scripts to import DIA from diann to msdap and post-process.
+Creates all scripts to import DIA-NN into msdap, post-process, and deploy the Shiny app.
 }
 \description{
-This function generates an R script to run post-processing on msdap output.
-It is a helper function for the processDiannMSdap.R function.
+Generates every script needed to take a DIA-NN search + raw files through
+MSDAP and into a ready-to-serve Shiny app, and chains them together with
+slurm dependencies so a single \verb{sbatch run_pipeline.sh} runs the whole
+thing in the correct order:
+\enumerate{
+\item msconvert   - raw files -> .mzML, staged next to report.tsv
+\item msdap       - import_dataset_diann() + analysis_quickstart()
+\item postprocess - MSDAP output -> app.R's CSVs/PNGs/xlsx/zip
+\item assemble    - lays those files out at finalPath/{data,www}/ and
+writes a job-specific app.R
+}
 }

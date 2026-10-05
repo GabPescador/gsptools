@@ -1,17 +1,20 @@
 #' Generates slurm script to submit all jobs to HPC
 #'
-#' This function generates a slurm script to run whole pipeline on HPC.
+#' Chains a list of slurm scripts together using --dependency=afterok, so
+#' each step only starts once the previous one succeeds. Step order is taken
+#' directly from the order of `scriptPaths`, so callers must pass steps in the
+#' order they should run (msconvert -> msdap -> postprocessing -> shinyapp).
 #' It is a helper function for the processDiannMSdap.R function.
 #'
-#' @param scriptPaths Path to your R scripts.
+#' @param scriptPaths Named list of paths to the slurm scripts to submit, in execution order.
+#' @param inputPath Path used to resolve the shared log directory (dirname(inputPath)/logs).
 #' @return Creates slurm script to run whole pipeline on HPC.
 #' @keywords internal
 #' @noRd
 
 generatePipelineSh <- function(scriptPaths, inputPath) {
 
-  # Build the submission block for each step dynamically
-  n <- length(scriptPaths)
+  # --- Build one sbatch submission line per step, chained via dependencies ---
   steps <- lapply(seq_along(scriptPaths), function(i) {
     name     <- toupper(names(scriptPaths)[i])
     var_name <- paste0("JOB", i)
@@ -24,8 +27,7 @@ generatePipelineSh <- function(scriptPaths, inputPath) {
     )
   })
 
-  log_dir <- file.path(dirname(inputPath), "logs")
-
+  log_dir  <- file.path(dirname(inputPath), "logs")
   job_vars <- paste(paste0("$JOB", seq_along(scriptPaths)), collapse = ",")
 
   glue::glue(r'(

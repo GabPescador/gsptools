@@ -1,8 +1,9 @@
 #' Generates msdap R script
 #'
-#' This function generates an R script to run msdap.
+#' Generates an R script that imports a DIA-NN report into MSDAP and runs
+#' `analysis_quickstart()` (normalization + DEA).
 #' It is a helper function for the processDiannMSdap.R function.
-#' 
+#'
 #' Settings for MSdap are the defaults for DIA data, if necessary change inside the first
 #' glue::glue block.
 #'
@@ -12,19 +13,20 @@
 #' @param inputPath Path where input files report.tsv (diann), sample_metadata.xlsx, FASTA used in the search and contrast.csv are located.
 #' @param outputPath Path where msdap results will be saved.
 #' @return Creates an R script to run msdap.
-#' @export
+#' @keywords internal
+#' @noRd
 
 generateMsdapScript <- function(inputPath, outputPath) {
-  
-  # Resolve file paths
+
+  # --- Resolve input file paths ---
   metadata   <- here::here(inputPath, "sample_metadata.xlsx")
   report     <- here::here(inputPath, "report.tsv")
   fasta      <- Sys.glob(here::here(inputPath, "*.fasta"))
   if (length(fasta) == 0) fasta <- Sys.glob(here::here(inputPath, "*.fas"))
   fasta_str  <- paste(fasta, collapse = '", "')
   msdap_path <- file.path(outputPath, "msdap_results")
-  
-  # Build contrast_pairs string for the generated script
+
+  # --- Build contrast_pairs list string from contrasts.csv ---
   contrast_pairs     <- data.table::fread(here::here(inputPath, "contrasts.csv"))
   contrast_pairs     <- Map(c, contrast_pairs$contrast1, contrast_pairs$contrast2)
   contrast_pairs_str <- paste0(
@@ -35,7 +37,8 @@ generateMsdapScript <- function(inputPath, outputPath) {
     ),
     ")"
   )
-  
+
+  # --- Emit the MSDAP analysis script ---
   glue::glue('
 library(msdap)
 

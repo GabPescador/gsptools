@@ -1,6 +1,7 @@
 #' Generates slurm script for submitting R scripts to HPC
 #'
-#' This function generates a slurm script to run R scripts on HPC cluster.
+#' Generic wrapper that loads R and runs a given Rscript on the HPC cluster.
+#' Used for both the MSDAP analysis step and the post-processing step.
 #' It is a helper function for the processDiannMSdap.R function.
 #'
 #' @param scriptPath Path to your R script.
@@ -9,14 +10,14 @@
 #' @param cpus Integer for how many cpus should be used for the submission. Defaults to 15.
 #' @param mem How much memory should be allocated for the submission. This should be an integer followed by G, like 50G. Defaults to 100G.
 #' @param time How much time should be requested for the submission. This should be integers with the following pattern: Days-Hours:Minutes:Seconds. Defaults to 1 day (01-00:00:00).
-#' @return Creates slurm scripts to run MSdap and post processing on HPC.
+#' @return Creates a slurm script that runs `Rscript scriptPath`.
 #' @keywords internal
 #' @noRd
 
 generateSlurmScript <- function(scriptPath, inputPath,
-                                  jobName = "job",
-                                  cpus = 15, mem = "100G",
-                                  time = "01-00:00:00") {
+                                 jobName = "job",
+                                 cpus = 15, mem = "100G",
+                                 time = "01-00:00:00") {
 
   log_dir <- file.path(dirname(inputPath), "logs")
   dir.create(log_dir, recursive = TRUE, showWarnings = FALSE)
@@ -39,6 +40,7 @@ trap "cp <<log_dir>>/$SLURM_JOB_ID* <<log_dir>>/" EXIT
 ml R/4.4.1
 
 Rscript <<scriptPath>>
+RSCRIPT_EXIT=$?
 
 echo "========================================="
 echo "Done!"
@@ -51,5 +53,10 @@ sacct -j $SLURM_JOB_ID \
 
 command -v job_stats && job_stats $SLURM_JOB_ID | sed "s/\x1B\[[0-9;]*m//g"
 echo "========================================="
+
+if [ "$RSCRIPT_EXIT" -ne 0 ]; then
+  echo "ERROR: Rscript <<scriptPath>> exited with status $RSCRIPT_EXIT" >&2
+fi
+exit $RSCRIPT_EXIT
   )', .open = "<<", .close = ">>")
 }
