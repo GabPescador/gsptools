@@ -75,7 +75,7 @@ processDiannMSdap <- function(inputPath, outputPath, rawFiles, jobname, species 
 library(gsptools)
 
 gsptools::generateShinyAppScript(
-  plotsPath       = "{file.path(outputPath, "plots")}",
+  outputPath       = "{file.path(outputPath)}",
   templateAppPath = "{templateAppPath}",
   jobname         = "{jobname}",
   species         = "{species}",

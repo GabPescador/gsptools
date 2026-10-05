@@ -6,7 +6,7 @@
 #' swapped in for this job. This is the last step in the pipeline, run after
 #' generatePostprocessingScript.R.
 #'
-#' @param plotsPath Path where postprocessing.R wrote its CSVs/PNGs/xlsx/zip (outputPath/plots).
+#' @param outputPath Path where postprocessing.R wrote its CSVs/PNGs/xlsx/zip (outputPath).
 #' @param templateAppPath Path to the master app.R (the reusable Shiny app template).
 #' @param jobname Job identifier, e.g. "PROT-1256".
 #' @param species Species code used by app.R's gene-group logic, e.g. "Hs" or "Dr".
@@ -15,8 +15,11 @@
 #' @keywords internal
 #' @noRd
 
-generateShinyAppScript <- function(plotsPath, templateAppPath, jobname, species = "Hs",
-                                    finalPath = file.path("/home/gd2417/ShinyApps", jobname)) {
+generateShinyAppScript <- function(outputPath,
+                                   templateAppPath = system.file("templates", "app.r", package = "gsptools"),
+                                   jobname,
+                                   species = "Hs",
+                                   finalPath = file.path("/home/gd2417/ShinyApps", jobname)) {
 
   # --- 1) Create destination folder structure ---
   data_dir <- file.path(finalPath, "data")
@@ -26,18 +29,18 @@ generateShinyAppScript <- function(plotsPath, templateAppPath, jobname, species 
 
   # --- 2) Copy tables + combined results into data/ ---
   table_files <- list.files(
-    plotsPath,
+    paste0(outputPath, "/tables/"),
     pattern    = paste0("^", jobname, "_(BasicStats|NormalizedAbundances|DEA_long|UniqueProteins|results)\\.(csv|xlsx|zip)$"),
     full.names = TRUE
   )
   if (length(table_files) == 0) {
-    warning("No matching data files found in ", plotsPath, " - check generatePostprocessingScript.R ran successfully.")
+    warning("No matching data files found in ", outputPath, " - check generatePostprocessingScript.R ran successfully.")
   }
   file.copy(table_files, data_dir, overwrite = TRUE)
 
   # --- 3) Copy chromatogram PNGs into www/ ---
   chromatogram_files <- list.files(
-    plotsPath,
+    paste0(outputPath, "/plots/"),
     pattern = paste0("^", jobname, "_chromatograms_[[:alnum:]]+_page[0-9]+\\.png$"),
     full.names = TRUE
   )

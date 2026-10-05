@@ -16,8 +16,8 @@ library(plotly)
 # NOTE: these two lines are rewritten per job by generateShinyAppScript.R -
 # do not remove or reformat them, they are matched by a regex on "^jobname <-"
 # and "^species <-".
-jobname <- "PROT-1256"
-species <- "Hs" # species code used to pick the right gene-group lists below (e.g. "Hs", "Dr")
+jobname <- "PROT-1293_test"
+species <- "Hs" # set per job by generateShinyAppScript
 
 # Load data ----
 # generateShinyAppScript.R stages these under <finalPath>/data before the app
@@ -31,11 +31,18 @@ uniqueProt <- fread(paste0("data/", jobname, "_UniqueProteins.csv"))
 # Get unique contrasts
 contrast_list <- unique(df$contrast)
 
-# Detect how many chromatogram pages exist for this job - varies by dataset
-# (number of raw/mzML fractions), so this must not be hardcoded in the UI.
-# Sorted numerically by page number so page10 doesn't sort before page2.
-chromatogram_files <- list.files("www", pattern = paste0("^", jobname, "_chromatograms_page[0-9]+\\.png$"))
-chromatogram_files <- chromatogram_files[order(as.integer(str_extract(chromatogram_files, "(?<=page)[0-9]+(?=\\.png$)")))]
+# Detect chromatogram PNGs per group, sorted numerically by page number
+# within each group (so page10 doesn't sort before page2). Filenames follow
+# the postprocessing script's <jobname>_chromatograms_<group>_page<N>.png
+# convention, where group is QC (hela) / Blank / Samples - varies by dataset
+# (number of raw/mzML fractions per group), so this must not be hardcoded.
+chromatogram_groups <- c("QC", "Blank", "Samples")
+
+chromatogram_files_by_group <- lapply(chromatogram_groups, function(grp) {
+  files <- list.files("www", pattern = paste0("^", jobname, "_chromatograms_", grp, "_page[0-9]+\\.png$"))
+  files[order(as.integer(str_extract(files, "(?<=page)[0-9]+(?=\\.png$)")))]
+})
+names(chromatogram_files_by_group) <- chromatogram_groups
 
 # List of protein ----
 
@@ -162,6 +169,52 @@ pcaPlot <- function(df){
   return(p2)
 }
 
+# Boxplot of normalized abundance for one or more proteins, faceted by
+# protein, colored/grouped by sample group (derived from column names, same
+# convention as pcaPlot()'s Group derivation).
+proteinBoxplot <- function(df, genes, ncol = 3) {
+ 
+  # Keep only the selected proteins (case-insensitive match)
+  plot_data <- df %>%
+    filter(tolower(protein_name) %in% tolower(genes))
+ 
+  if (nrow(plot_data) == 0) return(NULL)
+ 
+  # Reshape wide (one column per sample) -> long (one row per sample/protein)
+  plot_data <- plot_data %>%
+    select(-protein_id) %>%
+    pivot_longer(cols = -protein_name, names_to = "sample", values_to = "abundance") %>%
+    # Derive group by stripping the trailing replicate number, with or
+    # without an underscore before it - e.g. "C1"/"C2" -> "C", and
+    # "KO_1"/"KO_2" -> "KO". (pcaPlot()'s "_[^_]*$" regex only strips an
+    # underscore-delimited suffix, so it leaves "C1"/"C2" as two separate
+    # groups instead of pooling them - this version handles both schemes.)
+    mutate(Group = stringr::str_remove(sample, "_?[0-9]+$"))
+ 
+  # Force alphabetical ordering of groups on the x-axis (by sample name,
+  # not by first-appearance order in the data) - ggplot's default factor
+  # conversion for a character x is already alphabetical, but this makes
+  # it explicit and immune to any future upstream reordering of `df`.
+  plot_data <- plot_data %>%
+    mutate(Group = factor(Group, levels = sort(unique(Group))))
+ 
+  p <- ggplot(plot_data, aes(x = Group, y = abundance, color = Group)) +
+    geom_boxplot(outlier.shape = NA, alpha = 0.5) +
+    geom_jitter(width = 0.15, size = 1.5, alpha = 0.8) +
+    scale_color_manual(values = ColorPalette$Hex) +
+    facet_wrap(~ protein_name, ncol = ncol, scales = "free_y") +
+    theme_classic() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "none",
+      strip.text = element_text(face = "bold")
+    ) +
+    ylab("Log2(Normalized Abundance)") +
+    xlab("")
+ 
+  return(p)
+}
+
 volcanoPlot <- function(df, genes_to_highlight, genes_to_label, contrast_name, n_top = 10) {
   
   # Only plot msqrob DEA + MSDAP's differential_detection results - other
@@ -276,16 +329,11 @@ volcanoPlot <- function(df, genes_to_highlight, genes_to_label, contrast_name, n
 # box, no top-N slider). Hover tooltip shows protein name, logFC, adj.P.Val.
 volcanoPlotly <- function(df, genes_to_highlight, contrast_name) {
   
-  # Same msqrob + differential_detection restriction as volcanoPlot()
   plot_data <- df %>%
     filter(contrast == contrast_name,
            dea_algorithm %in% c("msqrob", "differential_detection"),
            !is.na(logFC),
-           !is.na(adj.P.Val))
-  
-  # Flag points from the selected gene group only (case-insensitive, same
-  # reasoning as volcanoPlot()/validated_genes()) - no "Top N" category here
-  plot_data <- plot_data %>%
+           !is.na(adj.P.Val)) %>%
     mutate(
       highlight = if (length(genes_to_highlight) == 0) {
         "Other"
@@ -295,7 +343,6 @@ volcanoPlotly <- function(df, genes_to_highlight, contrast_name) {
           TRUE ~ "Other"
         )
       },
-      # Custom hover text - ggplotly() picks this up via aes(text = ...)
       tooltip_text = paste0(
         "Protein: ", protein_name,
         "<br>Log2FC: ", round(logFC, 3),
@@ -303,22 +350,35 @@ volcanoPlotly <- function(df, genes_to_highlight, contrast_name) {
       )
     )
   
-  p <- ggplot(plot_data, aes(x = logFC, y = -log10(adj.P.Val), text = tooltip_text)) +
-    geom_point(aes(color = highlight), alpha = 0.7, size = 1.5) +
-    geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
-    geom_vline(xintercept = c(-1, 1), linetype = "dashed") +
-    scale_color_manual(values = c("Other" = "#BBBBBB", "Selected" = "#AA4499")) +
-    theme_classic() +
-    theme(legend.position = "none",
-          plot.title = element_text(size = 14, hjust = 0.5),
-          axis.text = element_text(size = 12, hjust = 0.5)) +
-    ggtitle(contrast_name) +
-    ylab("-Log10(Adj.P.Val)") +
-    xlab("Log2(FC)")
+  color_map <- c("Other" = "#BBBBBB", "Selected" = "#AA4499")
   
-  # tooltip = "text" restricts hover to just tooltip_text (otherwise plotly
-  # appends the aes()-mapped x/y/color values too)
-  plotly::ggplotly(p, tooltip = "text")
+  plotly::plot_ly(
+    data = plot_data,
+    x = ~logFC,
+    y = ~-log10(adj.P.Val),
+    text = ~tooltip_text,
+    hoverinfo = "text",
+    type = "scatter",
+    mode = "markers",
+    color = ~highlight,
+    colors = color_map,
+    marker = list(size = 8, opacity = 0.7)
+  ) %>%
+    plotly::layout(
+      title = list(text = contrast_name, x = 0.5),
+      xaxis = list(title = "Log2(FC)", zeroline = FALSE),
+      yaxis = list(title = "-Log10(Adj.P.Val)", zeroline = FALSE),
+      showlegend = FALSE,
+      shapes = list(
+        list(type = "line", x0 = -1, x1 = -1, y0 = 0, y1 = 1, yref = "paper",
+             line = list(dash = "dash", color = "grey")),
+        list(type = "line", x0 = 1, x1 = 1, y0 = 0, y1 = 1, yref = "paper",
+             line = list(dash = "dash", color = "grey")),
+        list(type = "line", x0 = 0, x1 = 1, xref = "paper",
+             y0 = -log10(0.05), y1 = -log10(0.05),
+             line = list(dash = "dash", color = "grey"))
+      )
+    )
 }
 
 # UI ----
@@ -362,7 +422,21 @@ ui <- page_navbar(
                   )
                 ),
         nav_panel(title = "Chromatograms",
-                  !!!lapply(chromatogram_files, function(f) img(src = f, width = "50%"))
+                  navset_pill(
+                    !!!lapply(chromatogram_groups, function(grp) {
+                      files <- chromatogram_files_by_group[[grp]]
+
+                      # Fallback message instead of a blank page if a group
+                      # has no chromatograms (e.g. a run with no blanks).
+                      content <- if (length(files) == 0) {
+                        list(p(paste0("No chromatograms found for ", grp, ".")))
+                      } else {
+                        lapply(files, function(f) img(src = f, width = "50%"))
+                      }
+
+                      nav_panel(title = grp, !!!content)
+                    })
+                  )
                 ),
         nav_panel(title = "Normalized Abundance",
                   p(),
@@ -413,10 +487,6 @@ ui <- page_navbar(
         width = 350,
         
         # Text box to highlight speific proteins
-        # NOTE: value is intentionally "" - a non-empty default here would
-        # permanently shadow the "Top proteins to show" slider below, since
-        # the manual-text branch takes priority over the slider branch in
-        # both selected_genes() and highlighted_proteins() reactives.
         textAreaInput(
           "protein",
           value = "",
@@ -530,6 +600,62 @@ ui <- page_navbar(
             plotly::plotlyOutput(paste0("volcano_ly_", safe_name), height = "600px", width = "600px")
           )
         })
+      )
+    )
+  ),
+  
+  ##########################
+  # Protein Boxplots page
+  # Same gene-group/manual-list priority pattern as the Visualization tab
+  # (group beats manual text list), but plotted against normalized
+  # abundance per sample/replicate rather than DEA fold-change stats.
+  ##########################
+  nav_panel(
+    title = "Protein Boxplots",
+    
+    layout_sidebar(
+      sidebar = sidebar(
+        width = 350,
+        
+        # Manual protein list (used only when no gene group is selected)
+        textAreaInput(
+          "protein_box",
+          value = "",
+          label = "Enter proteins (one per line)",
+          placeholder = "RPS19\nRPS9\nRPL10",
+          rows = 10
+        ),
+        
+        # Pre-defined gene group selector (reuses the same gene_groups list
+        # already built at app startup for the Visualization tab)
+        radioButtons(
+          "gene_group_box",
+          "Or select a gene group:",
+          choices = c(
+            "None (use text list)" = "none",
+            "Ribosomal Proteins"   = "group1",
+            "Biogenesis Factors"   = "group2",
+            "Translation Factors"  = "group3",
+            "E3 Ligases"           = "group4"
+          ),
+          selected = "none"
+        ),
+        
+        # Layout control for the facet grid
+        sliderInput(
+          "ncol_box",
+          "Plots per row:",
+          min = 1, max = 6, value = 3, step = 1
+        ),
+        
+        uiOutput("warning_message_box")
+      ),
+      
+      plotOutput("protein_boxplot", height = "700px", width = "900px"),
+      div(
+        style = "text-align: left; margin-top: 15px;",
+        downloadButton("boxplot_png", "PNG"),
+        downloadButton("boxplot_pdf", "PDF")
       )
     )
   ),
@@ -762,7 +888,7 @@ server <- function(input, output, session) {
       },
       content = function(file) {
         genes_to_color <- validated_genes()
-        genes_to_label <- highlighted_proteins() %>%
+        genes_to_label <- highlighted_proteins() %>% 
           filter(Regulation != "Non-significant") %>%
           pull(protein_name)
         n <- input$n_proteins
@@ -778,7 +904,7 @@ server <- function(input, output, session) {
       },
       content = function(file) {
         genes_to_color <- validated_genes()
-        genes_to_label <- highlighted_proteins() %>%
+        genes_to_label <- highlighted_proteins() %>% 
           filter(Regulation != "Non-significant") %>%
           pull(protein_name)
         n <- input$n_proteins
@@ -796,10 +922,6 @@ server <- function(input, output, session) {
         arrange(adj.P.Val)
       
       # Priority 1: Check if a gene group is selected
-      # Show ALL members of the group here (no logFC/adj.P.Val significance
-      # filter) - same behavior as the manual-text branch below, so the
-      # table always reflects the full gene list the user chose, not just
-      # the subset that happens to be significant in this contrast.
       if (input$gene_group != "none") {
         gene_list <- gene_groups[[input$gene_group]]
         
@@ -925,6 +1047,71 @@ server <- function(input, output, session) {
     })
   })
   
+  ##########################
+  # Reactives for protein boxplots
+  ##########################
+  
+  # Priority 1: gene group selection, Priority 2: manual text list
+  selected_genes_box <- reactive({
+    if (input$gene_group_box != "none") {
+      return(gene_groups[[input$gene_group_box]])
+    }
+    if (!is.null(input$protein_box) && input$protein_box != "") {
+      gene_list <- trimws(unlist(strsplit(input$protein_box, "\n")))
+      return(gene_list[gene_list != ""])
+    }
+    return(character(0))
+  })
+  
+  # Validate typed/selected genes against what's actually in the normalized
+  # abundance table, and surface any typos/unmatched names as a warning
+  validated_genes_box <- reactive({
+    genes <- selected_genes_box()
+    if (length(genes) == 0) return(character(0))
+    
+    available_genes <- unique(norm$protein_name)
+    valid   <- genes[tolower(genes) %in% tolower(available_genes)]
+    invalid <- genes[!tolower(genes) %in% tolower(available_genes)]
+    
+    output$warning_message_box <- renderUI({
+      if (length(invalid) > 0) {
+        div(
+          style = "color: black; font-weight: regular; margin-top: 10px; font-size: 10px",
+          paste("⚠ Proteins not found:", paste(invalid, collapse = ", "))
+        )
+      } else {
+        NULL
+      }
+    })
+    
+    return(valid)
+  })
+  
+  # Render the boxplot(s)
+  output$protein_boxplot <- renderPlot({
+    genes <- validated_genes_box()
+    req(length(genes) > 0)  # avoid rendering an empty/invalid plot
+    proteinBoxplot(norm, genes, ncol = input$ncol_box)
+  })
+  
+  # Download handler for PNG
+  output$boxplot_png <- downloadHandler(
+    filename = function() paste0(jobname, "_protein_boxplots_", Sys.Date(), ".png"),
+    content = function(file) {
+      p <- proteinBoxplot(norm, validated_genes_box(), ncol = input$ncol_box)
+      ggsave(file, plot = p, width = 10, height = 8, dpi = 300)
+    }
+  )
+  
+  # Download handler for PDF
+  output$boxplot_pdf <- downloadHandler(
+    filename = function() paste0(jobname, "_protein_boxplots_", Sys.Date(), ".pdf"),
+    content = function(file) {
+      p <- proteinBoxplot(norm, validated_genes_box(), ncol = input$ncol_box)
+      ggsave(file, plot = p, width = 10, height = 8)
+    }
+  )
+
   ##########################
   # Reactives for unique proteins
   ##########################
