@@ -1,7 +1,6 @@
-#' Generates post-processing R script
+#' Generates diann processing pipeline
 #'
-#' This function generates an R script to run post-processing on msdap output.
-#' It is a helper function for the processDiannMSdap.R function.
+#' This function generates the full diann processing pipeline and puts all files on its places.
 #'
 #' @param inputPath Path where input files report.tsv (diann), sample_metadata.xlsx, FASTA used in the search and contrast.csv are located.
 #' @param outputPath Path where results will be saved.
@@ -39,7 +38,7 @@ processDiannMSdap <- function(inputPath, outputPath, rawFiles) {
   mzML_slurm_path <- file.path(scripts_dir, "msconvert.sh")
   writeLines(generateMsconvertScript(rawFiles = rawFiles,
                                      inputPath = inputPath,
-                                     mzML_slurm_path)
+                                     mzML_slurm_path))
 
   # Step 3: Post-processing
   post_r_path     <- file.path(scripts_dir, "postprocessing.R")
