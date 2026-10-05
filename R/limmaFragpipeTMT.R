@@ -37,7 +37,7 @@ limmaFragpipeTMT <- function(inputPath,
 
   } else {
 
-    stop("No metadata.csv, contrasts.csv, abundance_protein_MD.tsv  and/or psm.tsv found, stopping execution.")
+    stop("No metadata.csv, contrasts.csv, abundance_protein_MD.tsv, psm.tsv and/or .mzML files found, stopping execution.")
 
   }
 

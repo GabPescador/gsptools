@@ -64,7 +64,7 @@ importFragpipeTMT <- function(inputPath, jobname, outputPath, force = FALSE){
 
   ### rowData
       rowData <- tmt %>%
-        select("protein_id","protein_name", "reference_intensity")
+        select("protein_id","protein_name")
 
   ### SumarizedObject
       se <- SummarizedExperiment(assay=list(raw=matrix),

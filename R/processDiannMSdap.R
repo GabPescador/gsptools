@@ -5,10 +5,11 @@
 #'
 #' @param inputPath Path where input files report.tsv (diann), sample_metadata.xlsx, FASTA used in the search and contrast.csv are located.
 #' @param outputPath Path where results will be saved.
+#' @param rawFiles Path where your raw files are located.
 #' @return Creates all scripts to import DIA from diann to msdap and post-process.
 #' @export
 
-processDiannMSdap <- function(inputPath, outputPath) {
+processDiannMSdap <- function(inputPath, outputPath, rawFiles) {
 
   # Validate inputs
   if (!file.exists(here::here(inputPath, "sample_metadata.xlsx")) |
@@ -34,7 +35,13 @@ processDiannMSdap <- function(inputPath, outputPath) {
                                    jobName = "msdap",
                                    cpus = 15, mem = "100G"), msdap_slurm_path)
 
-  # Step 2: Post-processing
+  # Step 2: mzML conversion
+  mzML_slurm_path <- file.path(scripts_dir, "msconvert.sh")
+  writeLines(generateMsconvertScript(rawFiles = rawFiles,
+                                     inputPath = inputPath,
+                                     mzML_slurm_path)
+
+  # Step 3: Post-processing
   post_r_path     <- file.path(scripts_dir, "postprocessing.R")
   post_slurm_path <- file.path(scripts_dir, "postprocessing.sh")
   writeLines(generatePostprocessingScript(outputPath), post_r_path)
@@ -47,6 +54,7 @@ processDiannMSdap <- function(inputPath, outputPath) {
   writeLines(
     generatePipelineSh(list(
       msdap       = msdap_slurm_path,
+      mzML = mzML_slurm_path,
       postprocess = post_slurm_path
       ),
     inputPath = inputPath),
@@ -59,10 +67,10 @@ processDiannMSdap <- function(inputPath, outputPath) {
   message("  ", scripts_dir, "/")
   message("    msdap_analysis.R")
   message("    msdap_analysis.sh")
+  message("    msconvert.sh")
   message("    postprocessing.R")
   message("    postprocessing.sh")
-  message("    run_pipeline.sh")
   message("")
   message("To submit, run in terminal:")
-  message("  bash ", pipeline_sh_path)
+  message("  sbatch ", pipeline_sh_path)
 }

@@ -27,8 +27,8 @@ generateSlurmScript <- function(scriptPath, inputPath,
 #SBATCH --cpus-per-task=<<cpus>>
 #SBATCH --mem=<<mem>>
 #SBATCH --time=<<time>>
-#SBATCH --output="<<log_dir>>/%j_%A_%a.out.out"
-#SBATCH --error="<<log_dir>>/%j_%A_%a.out.err"
+#SBATCH --output="<<log_dir>>/%j_%A_%a.out"
+#SBATCH --error="<<log_dir>>/%j_%A_%a.err"
 #SBATCH --mail-type=ALL
 
 cd <<dirname(inputPath)>>

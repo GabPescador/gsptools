@@ -34,8 +34,8 @@ generatePipelineSh <- function(scriptPaths, inputPath) {
 #SBATCH --cpus-per-task=15
 #SBATCH --mem=100
 #SBATCH --time=01-00:00:00
-#SBATCH --output="<<log_dir>>/%j_%A_%a.out.out"
-#SBATCH --error="<<log_dir>>/%j_%A_%a.out.err"
+#SBATCH --output="<<log_dir>>/%j_%A_%a.out"
+#SBATCH --error="<<log_dir>>/%j_%A_%a.err"
 #SBATCH --mail-type=ALL
 
 echo "Submitting pipeline..."
